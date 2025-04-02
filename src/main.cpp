@@ -1,5 +1,5 @@
-#include "engine/sample_engine.h"
-#include "graphics/sample_renderer.h"
+#include "engine/raytracing_engine.hpp"
+#include "graphics/raytracing_renderer.hpp"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -9,26 +9,25 @@
 // Binding code
 EMSCRIPTEN_BINDINGS(_Class_) {
 
-    emscripten::class_<SampleEngine>("Engine")
+    emscripten::class_<RayTracingEngine>("Engine")
         .constructor<>()
-        .class_function("getInstance", &SampleEngine::get_sample_instance, emscripten::return_value_policy::reference())
-        .function("setWasmModuleInitialized", &SampleEngine::set_wasm_module_initialized);
+        .class_function("getInstance", &RayTracingEngine::get_sample_instance, emscripten::return_value_policy::reference())
+        .function("setWasmModuleInitialized", &RayTracingEngine::set_wasm_module_initialized);
 
 }
-
 #endif
 
 int main()
 {
-    SampleEngine* engine = new SampleEngine();
-    SampleRenderer* renderer = new SampleRenderer();
+    RayTracingEngine* engine = new RayTracingEngine();
+    RayTracingRenderer* renderer = new RayTracingRenderer();
 
-    sEngineConfiguration configuration = {
-        .window_width = 1280,
-        .window_height = 720
-    };
+    sEngineConfiguration configuration;
+    configuration.window_width = 1280;
+    configuration.window_height = 720;
 
-    if (engine->initialize(renderer, configuration)) {
+    if (engine->initialize(renderer, configuration))
+    {
         return 1;
     }
 

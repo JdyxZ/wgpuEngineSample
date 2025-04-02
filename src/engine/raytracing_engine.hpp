@@ -4,25 +4,21 @@
 
 class Node3D;
 
-class SampleEngine : public Engine {
-
-    Node3D* controller_mesh_left = nullptr;
-    Node3D* controller_mesh_right = nullptr;
-
+class RayTracingEngine : public Engine
+{
 public:
 
 	int initialize(Renderer* renderer, sEngineConfiguration configuration = {}) override;
     int post_initialize() override;
     void clean() override;
-
-    static SampleEngine* get_sample_instance() { return static_cast<SampleEngine*>(instance); }
-
 	void update(float delta_time) override;
 	void render() override;
 
-#ifdef __EMSCRIPTEN__
+    static RayTracingEngine* get_sample_instance() { return static_cast<RayTracingEngine*>(instance); }
+
+    #ifdef __EMSCRIPTEN__
     void set_wasm_module_initialized(bool value) {
         wasm_module_initialized = value;
     }
-#endif
+    #endif
 };
