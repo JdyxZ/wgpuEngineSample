@@ -14,6 +14,7 @@ using Raytracing::infinity;
 
 translate::translate(const shared_ptr<Hittable>& object, const vec3& offset) : object(object), offset(offset)
 {
+    type = object->get_type();
     bbox = compute_translated_bbox();
 }
 
@@ -44,6 +45,9 @@ shared_ptr<AABB> translate::compute_translated_bbox()
 
 rotate::rotate(const shared_ptr<Hittable>& object, vec3 axis, double angle) : object(object)
 {
+    // Define type
+    type = object->get_type();
+
     // Transform degress to radians
     auto radians = degrees_to_radians(angle);
 
@@ -118,6 +122,7 @@ shared_ptr<AABB> rotate::compute_rotated_bbox() const
 
 scale::scale(const shared_ptr<Hittable>& object, const vec3& scale_factor) : object(object), scale_factor(scale_factor), inverse_scale(1.0 / scale_factor)
 {
+    type = object->get_type();
     bbox = compute_scaled_bbox();
 }
 
@@ -151,6 +156,7 @@ shared_ptr<AABB> scale::compute_scaled_bbox() const
 
 transform::transform(const shared_ptr<Hittable>& object, const shared_ptr<Matrix44> model) : object(object)
 {
+    this->type = object->get_type();
     this->model = model;
     this->inverse_model = make_shared<Matrix44>(model->inverse());
     this->bbox = compute_transformed_bbox();

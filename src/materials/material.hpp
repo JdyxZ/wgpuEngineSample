@@ -48,7 +48,7 @@ namespace Raytracing
     public:
         virtual ~Material() = default;
 
-        virtual bool scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, scatter_record& srec) const;
+        virtual bool scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, shared_ptr<scatter_record>& srec) const;
         virtual color emitted(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec) const;
         virtual double scattering_pdf_value(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, const shared_ptr<Ray>& scattered_ray) const;
         const MATERIAL_TYPE get_type() const;
@@ -63,7 +63,7 @@ namespace Raytracing
         Lambertian(const color& albedo);
         Lambertian(shared_ptr<Texture> texture);
 
-        bool scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, scatter_record& srec) const override;
+        bool scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, shared_ptr<scatter_record>& srec) const override;
         double scattering_pdf_value(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, const shared_ptr<Ray>& scattered_ray) const override;
 
     private:
@@ -75,7 +75,7 @@ namespace Raytracing
     public:
         Metal(const color& albedo, double fuzz);
 
-        bool scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, scatter_record& srec) const override;
+        bool scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, shared_ptr<scatter_record>& srec) const override;
 
     private:
         color albedo;
@@ -87,7 +87,7 @@ namespace Raytracing
     public:
         Dielectric(double refraction_index);
 
-        bool scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, scatter_record& srec) const override;
+        bool scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, shared_ptr<scatter_record>& srec) const override;
 
     private:
         double refraction_index; // Refractive index in vacuum or air, or the ratio of the material's refractive index over the refractive index of the enclosing media
@@ -113,7 +113,7 @@ namespace Raytracing
         Isotropic(const color& albedo);
         Isotropic(shared_ptr<Texture> texture);
 
-        bool scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, scatter_record& srec) const override;
+        bool scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, shared_ptr<scatter_record>& srec) const override;
         double scattering_pdf_value(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, const shared_ptr<Ray>& scattered_ray) const override;
 
     private:

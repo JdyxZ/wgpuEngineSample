@@ -28,6 +28,6 @@ inline double linear_to_gamma(double linear_component)
     return 0;
 }
 
-tuple<uint8_t, uint8_t, uint8_t> compute_color(const Raytracing::color& pixel_color);
+tuple<uint8_t, uint8_t, uint8_t, uint8_t> compute_color(const Raytracing::color& pixel_color);
 
 

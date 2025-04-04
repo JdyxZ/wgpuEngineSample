@@ -11,7 +11,7 @@
 using Raytracing::Texture;
 using Raytracing::color;
 
-bool Raytracing::Material::scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, scatter_record& srec) const
+bool Raytracing::Material::scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, shared_ptr<scatter_record>& srec) const
 {
     return false;
 }
@@ -41,14 +41,14 @@ Raytracing::Lambertian::Lambertian(shared_ptr<Texture> texture) : texture(textur
     type = LAMBERTIAN; 
 }
 
-bool Raytracing::Lambertian::scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, scatter_record& srec) const
+bool Raytracing::Lambertian::scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, shared_ptr<scatter_record>& srec) const
 {
     // auto scatter_direction = rec->normal + random_unit_vector();
-    srec.is_specular = false;
-    srec.specular_ray = nullptr;
-    srec.pdf = make_shared<cosine_hemisphere_pdf>(rec->normal);
-    srec.attenuation = texture->value(rec->texture_coordinates, rec->p);
-    srec.scatter_type = REFLECT;
+    srec->is_specular = false;
+    srec->specular_ray = nullptr;
+    srec->pdf = make_shared<cosine_hemisphere_pdf>(rec->normal);
+    srec->attenuation = texture->value(rec->texture_coordinates, rec->p);
+    srec->scatter_type = REFLECT;
     return true;
 }
 
@@ -60,7 +60,7 @@ double Raytracing::Lambertian::scattering_pdf_value(const shared_ptr<Ray>& incom
 
 Raytracing::Metal::Metal(const color& albedo, double fuzz) : albedo(albedo), fuzz(fuzz < 1 ? fuzz : 1) { type = METAL; }
 
-bool Raytracing::Metal::scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, scatter_record& srec) const
+bool Raytracing::Metal::scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, shared_ptr<scatter_record>& srec) const
 {
     // Reflect the incoming ray
     vec3 reflected = reflect(incoming_ray->direction(), rec->normal);
@@ -70,11 +70,11 @@ bool Raytracing::Metal::scatter(const shared_ptr<Ray>& incoming_ray, const share
     auto reflected_ray = Ray(rec->p, reflected, incoming_ray->time());
 
     // Save data into scatter record
-    srec.is_specular = true;
-    srec.specular_ray = make_shared<Ray>(reflected_ray);
-    srec.pdf = nullptr;
-    srec.attenuation = albedo;
-    srec.scatter_type = REFLECT;
+    srec->is_specular = true;
+    srec->specular_ray = make_shared<Ray>(reflected_ray);
+    srec->pdf = nullptr;
+    srec->attenuation = albedo;
+    srec->scatter_type = REFLECT;
 
     // Absorb the ray if it's reflected into the surface
     // return dot(reflected_ray.direction(), rec->normal) > 0;
@@ -87,7 +87,7 @@ Raytracing::Dielectric::Dielectric(double refraction_index) : refraction_index(r
     type = DIELECTRIC; 
 }
 
-bool Raytracing::Dielectric::scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, scatter_record& srec) const
+bool Raytracing::Dielectric::scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, shared_ptr<scatter_record>& srec) const
 {
     // Attenuation is always 1 (the glass surface absorbs nothing)
     auto attenuation = color(1.0, 1.0, 1.0);
@@ -111,22 +111,22 @@ bool Raytracing::Dielectric::scatter(const shared_ptr<Ray>& incoming_ray, const 
     if (cannot_refract || reflect_prob > random_double())
     {
         scattering_direction = reflect(unit_direction, rec->normal);
-        srec.scatter_type = REFLECT;
+        srec->scatter_type = REFLECT;
     }
     else
     {
         scattering_direction = refract(unit_direction, rec->normal, cos_theta, ri);
-        srec.scatter_type = REFRACT;
+        srec->scatter_type = REFRACT;
     }
 
     // Create scattered ray
     auto scattered_ray = Ray(rec->p, scattering_direction, incoming_ray->time());
 
     // Save data into scatter record
-    srec.is_specular = true;
-    srec.specular_ray = make_shared<Ray>(scattered_ray);
-    srec.pdf = nullptr;
-    srec.attenuation = attenuation;
+    srec->is_specular = true;
+    srec->specular_ray = make_shared<Ray>(scattered_ray);
+    srec->pdf = nullptr;
+    srec->attenuation = attenuation;
 
     return true;
 }
@@ -167,13 +167,13 @@ Raytracing::Isotropic::Isotropic(shared_ptr<Texture> texture) : texture(texture)
     type = ISOTROPIC; 
 }
 
-bool Raytracing::Isotropic::scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, scatter_record& srec) const
+bool Raytracing::Isotropic::scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, shared_ptr<scatter_record>& srec) const
 {
-    srec.is_specular = false;
-    srec.specular_ray = nullptr;
-    srec.pdf = make_shared<uniform_sphere_pdf>();
-    srec.attenuation = texture->value(rec->texture_coordinates, rec->p);
-    srec.scatter_type = REFLECT;
+    srec->is_specular = false;
+    srec->specular_ray = nullptr;
+    srec->pdf = make_shared<uniform_sphere_pdf>();
+    srec->attenuation = texture->value(rec->texture_coordinates, rec->p);
+    srec->scatter_type = REFLECT;
     return true;
 }
 

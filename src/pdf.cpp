@@ -66,6 +66,9 @@ hittables_pdf::hittables_pdf(const vector<shared_ptr<Hittable>>& hittables, cons
 
 double hittables_pdf::value(const vec3& scattering_direction) const 
 {
+    if (hittables.size() == 0)
+        return 0.0;
+
     auto size = hittables.size();
     auto weight = 1.0 / size;
     auto sum = 0.0;

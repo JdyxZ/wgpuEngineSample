@@ -7,11 +7,11 @@
 
 // Forward declarations
 struct Chrono;
+struct scene_stats;
 
 // Namespace forward declarations
 namespace Raytracing
 {
-    class Mesh;
     class Camera;
     class ImageWriter;
 }
@@ -39,24 +39,16 @@ namespace Raytracing
         // Hittable objects with PDF sampling distribution
         vector<shared_ptr<Hittable>> hittables_with_pdf;
 
-        // Scene specs
-        int bvh_depth = 0;
-        int bvh_nodes = 0;
-        int spheres = 0;
-        int quads = 0;
-        int triangles = 0;
-        int emissives = 0;
-        int primitives = 0;
+        // Stats
+        shared_ptr<scene_stats> stats;
+
+        // Timestamps
         string _start;
         string _end;
 
         // Chronos
         shared_ptr<Chrono> full_pipeline;
         shared_ptr<Chrono> build_chrono;
-        shared_ptr<Chrono> bvh_chrono;
-
-        // Mesh vector for log support
-        vector<shared_ptr<Mesh>> meshes;
 
         // Constructors
         Scene();

@@ -13,13 +13,12 @@
 #include "hittables/quad.hpp"
 #include "hittables/box.hpp"
 #include "hittables/mesh.hpp"
+#include "hittables/constant_medium.hpp"
 #include "math/perlin.hpp"
 #include "math/vec3.hpp"
 #include "graphics/color.hpp"
 #include "utils/utilities.hpp"
-#include "utils/hittable_transform.hpp"
 #include "utils/obj_loader.hpp"
-#include "hittables/constant_medium.hpp"
 #include "utils/chrono.hpp"
 #include "math/transform.hpp"
 
@@ -33,6 +32,7 @@ using Raytracing::Dielectric;
 using Raytracing::Metal;
 using Raytracing::Mesh;
 using Raytracing::color;
+using Raytracing::axis;
 
 void Raytracing::book1_final_scene_creation(Scene& scene, bool blur_motion)
 {
@@ -225,9 +225,6 @@ void Raytracing::perlin_spheres(Scene& scene, Camera& camera, ImageWriter& image
 
 void Raytracing::quads_scene(Scene& scene, Camera& camera, ImageWriter& image)
 {
-    // Image settings
-    image.aspect_ratio = 1.0;
-
     // Camera settings
     camera.vertical_fov = 80;
     camera.lookfrom = point3(0, 0, 9);
@@ -262,9 +259,6 @@ void Raytracing::quads_scene(Scene& scene, Camera& camera, ImageWriter& image)
 
 void Raytracing::simple_light(Scene& scene, Camera& camera, ImageWriter& image)
 {
-    // Image settings
-    image.aspect_ratio = 1.0;
-
     // Camera settings
     camera.vertical_fov = 20;
     camera.lookfrom = point3(26, 3, 6);
@@ -301,9 +295,6 @@ void Raytracing::simple_light(Scene& scene, Camera& camera, ImageWriter& image)
 
 void Raytracing::cornell_box(Scene& scene, Camera& camera, ImageWriter& image)
 {
-    // Image settings
-    image.aspect_ratio = 1.0;
-
     // Camera settings
     camera.vertical_fov = 40;
     camera.lookfrom = point3(278, 278, -800);
@@ -332,23 +323,15 @@ void Raytracing::cornell_box(Scene& scene, Camera& camera, ImageWriter& image)
     auto quad5 = make_shared<Quad>(point3(555, 555, 555), vec3(-555, 0, 0), vec3(0, 0, -555), white);
     auto quad6 = make_shared<Quad>(point3(0, 0, 555), vec3(555, 0, 0), vec3(0, 555, 0), white);
 
-    // Model matrix
-    auto box1_model = Transform::transform_matrix(vec3(265, 0, 295), y_axis, 15.0);
-    auto box2_model = Transform::transform_matrix(vec3(130, 0, 65), y_axis, -18.0);
-
     // Boxes
-    shared_ptr<Hittable> box1 = make_shared<Box>(point3(0, 0, 0), point3(165, 330, 165), white, box1_model);
-    shared_ptr<Hittable> box2 = make_shared<Box>(point3(0, 0, 0), point3(165, 165, 165), white, box2_model);
+    auto box1 = make_shared<Box>(point3(0, 0, 0), point3(165, 330, 165), white);
+    auto box2 = make_shared<Box>(point3(0, 0, 0), point3(165, 165, 165), white);
 
     // Transformations
-    box1 = make_shared<transform>(box1, box1_model);
-    box2 = make_shared<transform>(box2, box2_model);
-    /*
-    box1 = make_shared<rotate>(box1, y_axis, -15.0);
-    box1 = make_shared<translate>(box1, vec3(265, 0, 295));
-    box2 = make_shared<rotate>(box2, y_axis, 18.0);
-    box2 = make_shared<translate>(box2, vec3(130, 0, 65));
-    */
+    box1->translate(vec3(265, 0, 295));
+    box2->translate(vec3(130, 0, 65));
+    box1->rotate(y_axis, 15.0);
+    box2->rotate(y_axis, -18.0);
 
     // Glass Sphere
     auto sphere1 = make_shared<Sphere>(point3(190, 90, 190), 90, glass, nullptr, true);
@@ -371,9 +354,6 @@ void Raytracing::cornell_box(Scene& scene, Camera& camera, ImageWriter& image)
 
 void Raytracing::cornell_smoke(Scene& scene, Camera& camera, ImageWriter& image)
 {
-    // Image settings
-    image.aspect_ratio = 1.0;
-
     // Camera settings
     camera.vertical_fov = 40;
     camera.lookfrom = point3(278, 278, -800);
@@ -403,10 +383,10 @@ void Raytracing::cornell_smoke(Scene& scene, Camera& camera, ImageWriter& image)
     shared_ptr<Hittable> box2 = make_shared<Box>(point3(0, 0, 0), point3(165, 165, 165), white);
 
     // Transformations
-    box1 = make_shared<rotate>(box1, y_axis, -15.0);
-    box1 = make_shared<translate>(box1, vec3(265, 0, 295));
-    box2 = make_shared<rotate>(box2, y_axis, 18.0);
-    box2 = make_shared<translate>(box2, vec3(130, 0, 65));
+    box1->translate(vec3(265, 0, 295));
+    box2->translate(vec3(130, 0, 65));
+    box1->rotate(y_axis, 15.0);
+    box2->rotate(y_axis, -18.0);
 
     // Constant medium
     box1 = make_shared<constant_medium>(box1, 0.01, color(0, 0, 0));
@@ -425,9 +405,6 @@ void Raytracing::cornell_smoke(Scene& scene, Camera& camera, ImageWriter& image)
 
 void Raytracing::book2_final_scene(Scene& scene, Camera& camera, ImageWriter& image)
 {
-    // Image settings
-    image.aspect_ratio = 1.0;
-
     // Camera settings
     camera.vertical_fov = 40;
     camera.lookfrom = point3(478, 278, -600);
@@ -438,7 +415,7 @@ void Raytracing::book2_final_scene(Scene& scene, Camera& camera, ImageWriter& im
     scene.sky_blend = false;
     scene.background = BLACK;
     scene.bounce_max_depth = 40;
-    scene.samples_per_pixel = 10000;
+    scene.samples_per_pixel = 100;
     int boxes_per_side = 20;
 
     // Textures
@@ -471,7 +448,6 @@ void Raytracing::book2_final_scene(Scene& scene, Camera& camera, ImageWriter& im
             auto z1 = z0 + w;
 
             auto box = make_shared<Box>(point3(x0, y0, z0), point3(x1, y1, z1), ground);
-            *scene.bvh_chrono += *box->bvh_chrono();
 
             boxes.add(box);
         }
@@ -503,16 +479,16 @@ void Raytracing::book2_final_scene(Scene& scene, Camera& camera, ImageWriter& im
 
     // Transformed spheres
     hittable_list spheres;
-    shared_ptr<Hittable> transformed_spheres_bvh_tree;
+    shared_ptr<bvh_node> spheres_bvh_tree;
     for (int j = 0; j < 1000; j++)
     {
         auto sphere = make_shared<Sphere>(point3::random(0, 165), 10, white_material);
         spheres.add(sphere);
     }
 
-    auto spheres_bvh_tree = make_shared<bvh_node>(spheres);
-    transformed_spheres_bvh_tree = make_shared<rotate>(spheres_bvh_tree, y_axis, -15);
-    transformed_spheres_bvh_tree = make_shared<translate>(transformed_spheres_bvh_tree, vec3(-100, 270, 395));
+    spheres_bvh_tree = make_shared<bvh_node>(spheres);
+    spheres_bvh_tree->translate(vec3(-100, 270, 395));
+    spheres_bvh_tree->rotate(y_axis, 15);
 
     // Add objects to the scene
     scene.add(box_bvh_tree);
@@ -525,14 +501,11 @@ void Raytracing::book2_final_scene(Scene& scene, Camera& camera, ImageWriter& im
     scene.add(sphere6);
     scene.add(sphere7);
     scene.add(boundary1);
-    scene.add(transformed_spheres_bvh_tree);
+    scene.add(spheres_bvh_tree);
 }
 
 void Raytracing::obj_test(Scene& scene, Camera& camera, ImageWriter& image)
 {
-    // Image settings
-    image.aspect_ratio = 1.0;
-
     // Camera settings
     camera.vertical_fov = 20;
     camera.lookfrom = point3(13, 2, -3);

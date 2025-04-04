@@ -38,8 +38,11 @@ namespace Raytracing
 
         // Benchmark
         int primary_rays = 0;
+        int background_rays = 0;
+        int light_rays = 0;
         int reflected_rays = 0;
         int refracted_rays = 0;
+        int unknwon_rays = 0;
         int rays_casted = 0;
         int average_rays_per_second = 0;
         shared_ptr<Chrono> render_chrono;

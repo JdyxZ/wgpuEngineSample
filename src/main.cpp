@@ -23,13 +23,11 @@ int main()
     RayTracingRenderer* renderer = new RayTracingRenderer();
 
     sEngineConfiguration configuration;
-    configuration.window_width = 1280;
-    configuration.window_height = 720;
+    configuration.window_width = 640;
+    configuration.window_height = 360;
 
     if (engine->initialize(renderer, configuration))
-    {
         return 1;
-    }
 
     engine->start_loop();
 

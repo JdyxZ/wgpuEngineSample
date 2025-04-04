@@ -1,8 +1,8 @@
 // Headers
 #include "core/core.hpp"
+#include "bvh.hpp"
 #include "hittables/hittable_list.hpp"
 #include "utils/chrono.hpp"
-#include "bvh.hpp"
 #include "aabb.hpp"
 
 // Usings
@@ -10,22 +10,27 @@ using Raytracing::AABB;
 
 bvh_node::bvh_node(hittable_list list)
 {
-    chrono = make_shared<Chrono>();
+    stats = make_shared<bvh_stats>();
 
-    chrono->start();
+    stats->bvh_chrono->start();
 
-    auto instance = bvh_node(list.objects, 0, list.objects.size());
+    auto instance = bvh_node(list.objects, 0, list.objects.size(), stats);
 
-    chrono->end();
+    stats->bvh_chrono->end();
 
-    instance.type = BVH_NODE;
-    instance.chrono = chrono;
+    stats->bvh_depth += instance.depth;
+    stats->bvh_nodes += instance.nodes;
+
+    instance.stats = stats;
 
     *this = instance;
 }
 
-bvh_node::bvh_node(vector<shared_ptr<Hittable>>& objects, size_t start, size_t end)
+bvh_node::bvh_node(vector<shared_ptr<Hittable>>& objects, size_t start, size_t end, shared_ptr<bvh_stats>& stats)
 {
+    // Define hittable type
+    type = BVH_NODE;
+
     // Build the bounding box of the span of source objects.
     bbox = make_shared<AABB>(AABB::empty);
     for (size_t object_index = start; object_index < end; object_index++)
@@ -41,16 +46,25 @@ bvh_node::bvh_node(vector<shared_ptr<Hittable>>& objects, size_t start, size_t e
 
     if (object_span == 1)
     {
-        left = right = objects[start];
+        // Assign object to leaves
+        auto object = objects[start];
+        left = right = object;
+
+        // Calculate depth and nodes
         depth = 0;
         nodes = 1; // Same object for left and and right leaf
+        stats->add(object);
     }
     else if (object_span == 2)
     {
-        left = objects[start];
-        right = objects[start + 1];
+        auto left_object = objects[start];
+        auto right_object = objects[start + 1];
+        left = left_object;
+        right = right_object;
         depth = 0;
-        nodes = 1;
+        nodes = 2;
+        stats->add(left_object);
+        stats->add(right_object);
     }
     else
     {
@@ -59,8 +73,8 @@ bvh_node::bvh_node(vector<shared_ptr<Hittable>>& objects, size_t start, size_t e
 
         // Create nodes
         auto mid = start + object_span / 2;
-        auto left_node = make_shared<bvh_node>(objects, start, mid);
-        auto right_node = make_shared<bvh_node>(objects, mid, end);
+        auto left_node = make_shared<bvh_node>(objects, start, mid, stats);
+        auto right_node = make_shared<bvh_node>(objects, mid, end, stats);
 
         // Update depth and nodes based on the children
         depth = std::max(left_node->depth, right_node->depth) + 1;
@@ -74,11 +88,16 @@ bvh_node::bvh_node(vector<shared_ptr<Hittable>>& objects, size_t start, size_t e
 
 bool bvh_node::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<hit_record>& rec) const
 {
-    if (!bbox->hit(r, ray_t))
+    auto local_ray = transformed ? transform_ray(r) ? r;
+
+    if (!bbox->hit(local_ray, ray_t))
         return false;
 
-    bool hit_left = left->hit(r, ray_t, rec);
-    bool hit_right = right->hit(r, Interval(ray_t.min, hit_left ? rec->t : ray_t.max), rec);
+    bool hit_left = left->hit(local_ray, ray_t, rec);
+    bool hit_right = right->hit(local_ray, Interval(ray_t.min, hit_left ? rec->t : ray_t.max), rec);
+
+    if (transformed && (hit_left || hit_right))
+        transform_hit_record(rec);
 
     return hit_left || hit_right;
 }
@@ -88,9 +107,9 @@ shared_ptr<AABB> bvh_node::bounding_box() const
     return bbox;
 }
 
-const shared_ptr<Chrono> bvh_node::bvh_chrono() const
+shared_ptr<bvh_stats> bvh_node::get_stats() const
 {
-    return chrono;
+    return stats;
 }
 
 bool bvh_node::box_compare(const shared_ptr<Hittable>& a, const shared_ptr<Hittable>& b, int axis_index)

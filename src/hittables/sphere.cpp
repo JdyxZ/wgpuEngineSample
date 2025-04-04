@@ -17,7 +17,7 @@ Sphere::Sphere(point3 static_center, const double radius, const shared_ptr<Mater
 {
     type = SPHERE;
     this->model = model ? model : Hittable::model;
-    // this->pdf = pdf;
+    this->pdf = pdf;
 
     vec3 origin = static_center;
     vec3 direction = vec3(0);
@@ -46,11 +46,13 @@ Sphere::Sphere(point3 start_center, point3 end_center, const double radius, cons
 
 bool Sphere::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<hit_record>& rec) const
 {
-    point3 current_center = center.at(r->time());
+    auto local_ray = transformed ? transform_ray(r) : r;
 
-    vec3 oc = current_center - r->origin();
-    auto a = r->direction().length_squared();
-    auto h = dot(r->direction(), oc); // h = -b/2
+    point3 current_center = center.at(local_ray->time());
+
+    vec3 oc = current_center - local_ray->origin();
+    auto a = local_ray->direction().length_squared();
+    auto h = dot(local_ray->direction(), oc); // h = -b/2
     auto c = oc.length_squared() - radius * radius;
 
     auto discriminant = h * h - a * c;
@@ -67,7 +69,7 @@ bool Sphere::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<hit_record
             return false;
     }
 
-    vec3 phit = r->at(root);
+    vec3 phit = local_ray->at(root);
     vec3 outward_normal = (phit - current_center) / radius;
 
     // Hit record
@@ -75,12 +77,15 @@ bool Sphere::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<hit_record
     sph_rec->t = root;
     sph_rec->p = phit;
     sph_rec->material = material;
-    sph_rec->determine_normal_direction(r->direction(), outward_normal);
+    sph_rec->determine_normal_direction(local_ray->direction(), outward_normal);
     sph_rec->texture_coordinates = get_sphere_uv(outward_normal);
     sph_rec->type = type;
 
     // Polymorphic assignment
     rec = sph_rec;
+
+    if (transformed)
+        transform_hit_record(rec);
 
     return true;
 }

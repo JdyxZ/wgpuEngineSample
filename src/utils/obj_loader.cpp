@@ -9,9 +9,6 @@
 #include "materials/material.hpp"
 #include "materials/texture.hpp"
 
-// Macros
-#define TINYOBJLOADER_IMPLEMENTATION
-
 // External Headers
 #include "tiny_obj_loader.h"
 

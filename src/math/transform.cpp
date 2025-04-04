@@ -12,7 +12,7 @@ using Raytracing::Matrix44;
 Raytracing::Transform::Transform()
 {
 	translation = make_shared<vec3>(0.0);
-	rotation = make_shared<Quaternion>();
+	rotation = make_shared<Quaternion>(1.0, 0.0, 0.0, 0.0);
 	scaling = make_shared<vec3>(1.0);
 	recompute = true;
 	model = nullptr;
@@ -60,6 +60,15 @@ void Raytracing::Transform::set_rotation(const Quaternion& rotation)
 {
 	this->rotation = make_shared<Quaternion>(rotation);
 	recompute = true;
+}
+
+void Raytracing::Transform::set_rotation(vec3 axis, const double& angle)
+{
+    auto radians = degrees_to_radians(angle);
+    axis.normalize();
+
+    this->rotation = make_shared<Quaternion>(axis, radians);
+    recompute = true;
 }
 
 void Raytracing::Transform::set_scaling(const vec3& scailing)

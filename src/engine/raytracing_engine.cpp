@@ -36,6 +36,8 @@ void RayTracingEngine::update(float delta_time)
 
 void RayTracingEngine::render()
 {
+    show_imgui = false;
+
     if (show_imgui)
         render_default_gui();
 

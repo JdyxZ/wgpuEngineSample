@@ -12,6 +12,7 @@
 #include "image_writer.hpp"
 #include "graphics/camera.hpp"
 #include "hittables/mesh.hpp"
+#include "scene_stats.hpp"
 
 // Usings
 using Raytracing::Scene;
@@ -72,26 +73,27 @@ void LogWriter::write(const Scene& scene, const Camera& camera, ImageWriter& ima
 
     // BVH Section
     log << "## BVH 🍂\n\n";
-    log << "**Main Depth:** " << scene.bvh_depth << "  \n";
-    log << "**Main Nodes:** " << scene.bvh_nodes << "  \n";
-    log << "**BVHs Build Time:** " << scene.bvh_chrono->elapsed_to_string() << "\n\n";
+    log << "**Depth:** " << scene.stats->bvh_depth << "  \n";
+    log << "**Nodes:** " << scene.stats->bvh_nodes << "  \n";
+    log << "**BVHs Build Time:** " << scene.stats->bvh_chrono->elapsed_to_string() << "\n\n";
 
     // Primitives
     log << "## Primitives 🔵\n\n";
-    log << "**Spheres:** " << scene.spheres << "  \n";
-    log << "**Quads:** " << scene.quads << "  \n";
-    log << "**Triangles:** " << scene.triangles << "  \n";
-    log << "**Total:** " << scene.primitives << "  \n\n";
+    log << "**Spheres:** " << scene.stats->spheres << "  \n";
+    log << "**Quads:** " << scene.stats->quads << "  \n";
+    log << "**Triangles:** " << scene.stats->triangles << "  \n";
+    log << "**Total:** " << scene.stats->primitives << "  \n\n";
 
     // Meshes
     log << "## Meshes 🔺\n\n";
-    for (auto mesh : scene.meshes)
+    for (auto mesh : scene.stats->meshes)
     {
+        auto mesh_bvh_stats = mesh->stats();
         log << "· `" << mesh->name() << "`:\n";
-        log << "    - **Total Triangles:** " << mesh->num_triangles() << "  \n";
+        log << "    - **Total Triangles:** " << mesh_bvh_stats->triangles << "  \n";
         log << "    - **Surfaces:** " << mesh->num_surfaces() << "  \n";
         log << "    - **Textures:** " << to_list(mesh->texture_names()) << "  \n";
-        log << "    - **BVH build time:** " << mesh->bvh_chrono()->elapsed_to_string() << " \n";
+        log << "    - **BVH build time:** " << mesh_bvh_stats->bvh_chrono->elapsed_to_string() << " \n";
     }
     log << "\n";
 
@@ -108,8 +110,11 @@ void LogWriter::write(const Scene& scene, const Camera& camera, ImageWriter& ima
     log << "**Rendering Time:** " << camera.render_chrono->elapsed_to_string() << " \n";
     log << "**Rays:**\n";
     log << "    - **Primary Rays:** " << camera.primary_rays << "  \n";
+    log << "    - **Background Rays:** " << camera.background_rays << "  \n";
+    log << "    - **Light Rays:** " << camera.light_rays << "  \n";
     log << "    - **Reflected Rays:** " << camera.reflected_rays << "  \n";
     log << "    - **Refracted Rays:** " << camera.refracted_rays << "  \n";
+    log << "    - **Unknwon Rays:** " << camera.unknwon_rays << "  \n";
     log << "    - **Total Rays Casted:** " << camera.rays_casted << "  \n";
     log << "    - **Average Rays per Second:** " << camera.average_rays_per_second << "  \n\n";
 

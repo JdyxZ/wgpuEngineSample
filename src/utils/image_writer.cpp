@@ -11,13 +11,13 @@
 // External Headers
 #include "external/stb_image_write.hpp"
 
-Raytracing::ImageWriter::ImageWriter() {}
+Raytracing::ImageWriter::ImageWriter() : width(0), height(0), aspect_ratio(0){}
 
 Raytracing::ImageWriter::ImageWriter(int width, int height)
 {
     this->width = width;
     this->height = height;
-    this->aspect_ratio = width / (double)height;
+    this->aspect_ratio = width / static_cast<double>(height);
     encoding_chrono = make_shared<Chrono>();
 }
 
@@ -48,20 +48,21 @@ void Raytracing::ImageWriter::initialize()
     // height = (height < 1) ? 1 : height;
 
     // Reserve space for image data pointer
-    data.resize(3 * width * height);
+    data.resize(4 * width * height);
 
     // Log info
     Logger::info("ImageWriter", "Image frame succesfully initialized.");
 }
 
-void Raytracing::ImageWriter::write_pixel(int pixel_position, tuple<uint8_t, uint8_t, uint8_t> RGB_color)
+void Raytracing::ImageWriter::write_pixel(int pixel_position, tuple<uint8_t, uint8_t, uint8_t, uint8_t> RGBA_color)
 {
-    uint8_t red_byte, green_byte, blue_byte;
-    std::tie<uint8_t, uint8_t, uint8_t>(red_byte, green_byte, blue_byte) = RGB_color;
+    uint8_t red_byte, green_byte, blue_byte, alpha;
+    std::tie<uint8_t, uint8_t, uint8_t, uint8_t>(red_byte, green_byte, blue_byte, alpha) = RGBA_color;
 
     data[pixel_position + 0] = red_byte;
     data[pixel_position + 1] = green_byte;
     data[pixel_position + 2] = blue_byte;
+    data[pixel_position + 3] = alpha;
 }
 
 void Raytracing::ImageWriter::save()

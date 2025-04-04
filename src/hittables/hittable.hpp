@@ -14,6 +14,7 @@ namespace Raytracing
 {
     class Material;
     class AABB;
+    struct Transform;
 }
 
 enum PRIMITIVE
@@ -22,7 +23,9 @@ enum PRIMITIVE
 	TRIANGLE,
     QUAD,
     BOX,
+    CONSTANT_MEDIUM,
     MESH,
+    SURFACE,
     BVH_NODE,
 	NOT_SPECIFIED
 };
@@ -81,10 +84,20 @@ public:
     const PRIMITIVE get_type() const;
     const bool has_pdf() const;
 
+    void translate(const vec3& translation);
+    void rotate(const vec3& axis, const double& angle);
+    void scale(const vec3& scaling);
+
 protected:
     PRIMITIVE type = NOT_SPECIFIED;
+    shared_ptr<Raytracing::Transform> transform = make_shared<Raytracing::Transform>();
     shared_ptr<Raytracing::Matrix44> model = make_shared<Raytracing::Matrix44>(Raytracing::Matrix::identity(4));
+    shared_ptr<Raytracing::Matrix44> inverse_model = make_shared<Raytracing::Matrix44>(Raytracing::Matrix::identity(4));
+    bool transformed = false;
     bool pdf = false;
+
+    const shared_ptr<Ray> transform_ray(const shared_ptr<Ray>& r) const;
+    void transform_hit_record(shared_ptr<hit_record>& rec) const;
 };
 
 

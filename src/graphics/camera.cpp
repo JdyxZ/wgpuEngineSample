@@ -30,7 +30,7 @@ void Raytracing::Camera::initialize(const Scene& scene, ImageWriter& image)
     auto theta = degrees_to_radians(vertical_fov);
     auto h = std::tan(theta / 2);
     viewport_height = 2 * h * focus_distance;
-    viewport_width = viewport_height * (double(image.get_width()) / image.get_height());
+    viewport_width = viewport_height * image.aspect_ratio;
 
     // Calculate the u,v,w unit basis vectors for the camera coordinate frame.
     view = unit_vector(lookfrom - lookat);
@@ -43,15 +43,15 @@ void Raytracing::Camera::initialize(const Scene& scene, ImageWriter& image)
     vec3 viewport_w = focus_distance * view;
 
     // Calculate the horizontal and vertical delta vectors from pixel to pixel.
-    pixel_delta_u = viewport_u / image.get_width();
-    pixel_delta_v = viewport_v / image.get_height();
+    pixel_delta_u = viewport_u / static_cast<double>(image.get_width());
+    pixel_delta_v = viewport_v / static_cast<double>(image.get_height());
 
     // Calculate the location of the upper left pixel.
-    auto viewport_upper_left = lookfrom - viewport_w - viewport_u / 2 - viewport_v / 2;
+    auto viewport_upper_left = lookfrom - viewport_w - viewport_u / 2.0 - viewport_v / 2.0;
     pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
     // Calculate the camera defocus disk basis vectors.
-    auto defocus_radius = std::tan(degrees_to_radians(defocus_angle / 2));
+    auto defocus_radius = std::tan(degrees_to_radians(defocus_angle / 2.0));
     defocus_disk_u = side * defocus_radius * focus_distance;
     defocus_disk_v = up * defocus_radius * focus_distance;
 
@@ -74,6 +74,7 @@ void Raytracing::Camera::render(Scene& scene, ImageWriter& image)
     // Start render chrono
     render_chrono->start();
 
+    // Stratified sample square
     for (int pixel_row = 0; pixel_row < image.get_height(); pixel_row++)
     {
         // Progress info
@@ -83,6 +84,8 @@ void Raytracing::Camera::render(Scene& scene, ImageWriter& image)
         {
             // Final pixel color
             color pixel_color(0, 0, 0);
+
+            std::cout << pixel_sample_sqrt << std::endl;
 
             // Sample points with stratified sampling for antialisasing
             for (int sample_row = 0; sample_row < pixel_sample_sqrt; sample_row++)
@@ -97,28 +100,31 @@ void Raytracing::Camera::render(Scene& scene, ImageWriter& image)
                 }
             }
 
+            std::cout << "Here 12" << std::endl;
             // Avarage samples
             pixel_color /= scene.samples_per_pixel;
 
             // Compute color
-            tuple<uint8_t, uint8_t, uint8_t> RGB_color = compute_color(pixel_color);
+            tuple<uint8_t, uint8_t, uint8_t, uint8_t> RGBA_color = compute_color(pixel_color);
+            std::cout << "Here 13" << std::endl;
 
             // Determine pixel position in image buffer
-            int pixel_position = 3 * (image.get_width() * pixel_row + pixel_column);
+            int pixel_position = 4 * (image.get_width() * pixel_row + pixel_column);
 
             // Save pixel color into image buffer (row-major order)
-            image.write_pixel(pixel_position, RGB_color);
+            image.write_pixel(pixel_position, RGBA_color);
+            std::cout << "Here 14" << std::endl;
         }
     }
-
-    // Progress info end line
-    std::cout << std::endl;
 
     // End render chrono
     render_chrono->end();
 
+    // Progress info end line
+    std::cout << std::endl;
+
     // Benchmark rays
-    rays_casted = primary_rays + reflected_rays + refracted_rays;
+    rays_casted = primary_rays + background_rays + light_rays + reflected_rays + refracted_rays + unknwon_rays;
     average_rays_per_second = rays_casted / render_chrono->elapsed_miliseconds();
 }
 
@@ -145,121 +151,116 @@ color Raytracing::Camera::ray_color(const shared_ptr<Ray>& sample_ray, int depth
     if (depth <= 0)
         return color(0, 0, 0);
 
-    // Intersection details and closest object hit by the ray
-    shared_ptr<hit_record> rec;
+    // Intersection details
+    shared_ptr<hit_record> hrec;
 
     // Define ray intersection interval
     Interval ray_t(scene.min_hit_distance, infinity);
 
-    // Sky hit
-    if (!scene.intersect(sample_ray, ray_t, rec))
-        return scene.sky_blend ? sky_blend(sample_ray) : scene.background;
+    // Background hit
+    if (!scene.intersect(sample_ray, ray_t, hrec))
+    {
+        background_rays++;
+        auto result = scene.sky_blend ? sky_blend(sample_ray) : scene.background;
+        return result;
+    }
 
     // Hit object type
-    PRIMITIVE hit_object_type = rec->type;
-
-    // Material intersection point colors
-    color color_from_scatter;
-    color color_from_emission = rec->material->emitted(sample_ray, rec);
-
-    // Get scene objects with specific PDFs
-    auto hittables_with_pdf = scene.hittables_with_pdf;
-
-    // Scattering record for pdf and attenuation management
-    scatter_record srec;
+    PRIMITIVE hit_object_type = hrec->type;
 
     // If the ray hits an object, calculate the color of the hit point
     switch (hit_object_type)
     {
+    case CONSTANT_MEDIUM:
+
     case TRIANGLE:
-    {
-        /*
-        std::shared_ptr<triangle_hit_record> tri_rec = std::dynamic_pointer_cast<triangle_hit_record>(rec);
 
-        if (tri_rec)
-        {
-            throw std::runtime_error("Error in hit record downcast to triangle hit record");
-            return color(0, 0, 0);
-        }
-
-        auto c = barycentric_color_interpolation(tri_rec, t);
-
-        if (c.has_value())
-            return c.value();
-
-        return 0.5 * (tri_rec->normal + WHITE);
-        */
-    }
     case QUAD:
 
     case SPHERE:
     {
-        // If the ray does not scatter, it is emissive
-        if (!rec->material->scatter(sample_ray, rec, srec))
-            return color_from_emission;
+        // Intersection point computed colors
+        color color_from_scatter;
+        color color_from_emission = hrec->material->emitted(sample_ray, hrec);
 
-        // Deal with specular materials apart from the rest (PDF skip)
-        if (srec.is_specular)
+        // Material scattering details
+        shared_ptr<scatter_record> srec;
+
+        // std::cout << "Here 4" << std::endl;
+
+        // If the ray does not scatter, it has hit an emissive material
+        if (!hrec->material->scatter(sample_ray, hrec, srec))
         {
-            if (depth - 1 > 0)
-            {
-                switch (srec.scatter_type)
-                {
-                case REFLECT: reflected_rays++; break;
-                case REFRACT: refracted_rays++; break;
-                }
-            }
-
-            return srec.attenuation * ray_color(srec.specular_ray, depth - 1, scene);
+            light_rays++;
+            return color_from_emission;
         }
 
+        // Deal with specular materials apart from the rest (PDF skip)
+        if (srec->is_specular)
+        {
+            switch (srec->scatter_type)
+            {
+                case REFLECT: reflected_rays++; break; // Metal or Dielectric
+                case REFRACT: refracted_rays++; break; // Dielectric
+            }
+
+            return srec->attenuation * ray_color(srec->specular_ray, depth - 1, scene);
+        }
+
+        // Aux variables (to make code more understandable)
+        auto hittables_with_pdf = scene.hittables_with_pdf;
+        vec3 surface_hit_point = hrec->p;
+        auto material_pdf = srec->pdf;
 
         // Create the sampling PDF
         shared_ptr<PDF> sampling_pdf;
 
+        // Determine the sampling PDF
         if (hittables_with_pdf.empty())
         {
             // Material associated samplig PDF
-            sampling_pdf = srec.pdf;
+            sampling_pdf = material_pdf;
         }
         else
         {
-            // Generate mixture of PDFs
-            auto _hittables_pdf = make_shared<hittables_pdf>(hittables_with_pdf, rec->p);
-            auto _mixture_pdf = make_shared<mixture_pdf>(_hittables_pdf, srec.pdf);
+            // std::cout << "Here 5" << std::endl;
+            // Generate mixture of PDFs (hittable pdf + material pdf)
+            auto _hittables_pdf = make_shared<hittables_pdf>(hittables_with_pdf, surface_hit_point);
+            auto _mixture_pdf = make_shared<mixture_pdf>(_hittables_pdf, material_pdf);
             sampling_pdf = _mixture_pdf;
+            // std::cout << "Here 6" << std::endl;
         }
 
+        // std::cout << "Here 7" << std::endl;
         // Generate random scatter ray using the sampling PDF
-        vec3 surface_hit_point = rec->p;
         vec3 scatter_direction = sampling_pdf->generate();
         auto scattered = make_shared<Ray>(surface_hit_point, scatter_direction, sample_ray->time());
+        // std::cout << "Here 8" << std::endl;
 
         // Get the weight of the generated scatter ray sample
         auto sampling_pdf_value = sampling_pdf->value(scatter_direction);
+        // std::cout << "Here 9" << std::endl;
 
         // Get the material's associated scattering PDF
-        auto scattering_pdf_value = rec->material->scattering_pdf_value(sample_ray, rec, scattered);
+        auto scattering_pdf_value = hrec->material->scattering_pdf_value(sample_ray, hrec, scattered);
+        // std::cout << "Here 10" << std::endl;
 
-        // Ray bounce
-        if (depth - 1 > 0)
-        {
-            switch (srec.scatter_type)
-            {
-            case REFLECT: reflected_rays++; break;
-            case REFRACT: refracted_rays++; break;
-            }
-        }
+        // Update reflecting rays count
+        reflected_rays++;
 
+        // Recursive call
         color sample_color = ray_color(scattered, depth - 1, scene);
+        // std::cout << "Here 11" << std::endl;
 
         // Bidirectional Reflectance Distribution Function (BRDF)
-        color_from_scatter = (srec.attenuation * scattering_pdf_value * sample_color) / sampling_pdf_value;
+        color_from_scatter = (srec->attenuation * scattering_pdf_value * sample_color) / sampling_pdf_value;
 
         // Combine scatter and emission colors
         return color_from_emission + color_from_scatter;
     }
     default: // Unknown hit
+        std::cout << hit_object_type << std::endl;
+        unknwon_rays++;
         return scene.sky_blend ? sky_blend(sample_ray) : scene.background;
     }
 }

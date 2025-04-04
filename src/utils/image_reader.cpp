@@ -2,11 +2,6 @@
 #include "core/core.hpp"
 #include "image_reader.hpp"
 
-// Macros
-#define STB_IMAGE_IMPLEMENTATION
-#define STBI_FAILURE_USERMSG
-#define __STDC_LIB_EXT1__
-
 // External Headers
 #include "stb_image.h"
 
@@ -31,7 +26,7 @@ Raytracing::ImageReader::ImageReader() {}
 Raytracing::ImageReader::~ImageReader()
 {
     delete[] bdata;
-    STBI_FREE(fdata);
+    free(fdata);
 }
 
 int Raytracing::ImageReader::width()  const

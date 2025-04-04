@@ -33,7 +33,7 @@ namespace Raytracing
         ImageWriter(int width, int height);
 
         void initialize();
-        void write_pixel(int pixel_position, tuple<uint8_t, uint8_t, uint8_t> RGB_color);
+        void write_pixel(int pixel_position, tuple<uint8_t, uint8_t, uint8_t, uint8_t> RGBA_color);
         void save();
 
         int get_width();

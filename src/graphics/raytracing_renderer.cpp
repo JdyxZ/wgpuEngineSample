@@ -38,6 +38,7 @@ int RayTracingRenderer::post_initialize()
     Renderer::post_initialize();
 
     init_frame_windows();
+    std::cout << std::endl;
 
     // Scene start
     scene.start();

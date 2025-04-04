@@ -24,6 +24,7 @@ namespace Raytracing
 
 	    void set_translation(const vec3& translation);
 	    void set_rotation(const Quaternion& rotation);
+        void set_rotation(vec3 axis, const double& angle);
 	    void set_scaling(const vec3& scailing);
 
 	    void set_recompute(bool recompute);
