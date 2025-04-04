@@ -1,9 +1,9 @@
 // Headers 
 #include "core/core.hpp"
 #include "surface.hpp"
-#include "hittable_list.hpp"
 #include "bvh.hpp"
-#include "aabb.hpp"
+#include "hittable_list.hpp"
+#include "math/aabb.hpp"
 
 // Usings
 using Raytracing::AABB;

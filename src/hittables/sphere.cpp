@@ -1,7 +1,7 @@
 // Headers 
 #include "core/core.hpp"
 #include "sphere.hpp"
-#include "aabb.hpp"
+#include "math/aabb.hpp"
 #include "utils/utilities.hpp"
 #include "math/onb.hpp"
 #include "math/matrix.hpp"

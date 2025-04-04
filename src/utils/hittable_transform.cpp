@@ -2,8 +2,8 @@
 #include "core/core.hpp"
 #include "hittable_transform.hpp"
 #include "ray.hpp"
-#include "aabb.hpp"
-#include "interval.hpp"
+#include "math/aabb.hpp"
+#include "math/interval.hpp"
 #include "utilities.hpp"
 #include "math/quaternion.hpp"
 

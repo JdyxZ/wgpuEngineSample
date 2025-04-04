@@ -27,6 +27,7 @@ struct scene_stats
 
     scene_stats();
 
+    static int get_bvh_depth(const shared_ptr<Hittable> object);
     void add(const shared_ptr<Hittable> object);
 
     scene_stats& operator+=(const scene_stats& s);

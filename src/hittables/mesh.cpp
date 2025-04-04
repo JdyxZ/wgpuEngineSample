@@ -3,9 +3,9 @@
 #include "mesh.hpp"
 #include "hittable_list.hpp"
 #include "bvh.hpp"
-#include "aabb.hpp"
+#include "math/aabb.hpp"
 #include "surface.hpp"
-#include "utils/interval.hpp"
+#include "math/interval.hpp"
 #include "utils/chrono.hpp"
 
 // Usings

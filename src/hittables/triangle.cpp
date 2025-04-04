@@ -2,9 +2,9 @@
 #include "core/core.hpp"
 #include "triangle.hpp"
 #include "ray.hpp"
-#include "aabb.hpp"
+#include "math/aabb.hpp"
 #include "utils/utilities.hpp"
-#include "utils/interval.hpp"
+#include "math/interval.hpp"
 #include "math/matrix.hpp"
 
 // Usings

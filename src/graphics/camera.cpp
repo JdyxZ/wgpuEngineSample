@@ -3,13 +3,13 @@
 #include "camera.hpp"
 #include "scene.hpp"
 #include "ray.hpp"
-#include "pdf.hpp"
+#include "math/pdf.hpp"
 #include "utils/utilities.hpp"
 #include "utils/image_writer.hpp"
 #include "utils/chrono.hpp"
 #include "graphics/color.hpp"
 #include "hittables/hittable.hpp"
-#include "utils/interval.hpp"
+#include "math/interval.hpp"
 #include "materials/material.hpp"
 #include "hittables/triangle.hpp"
 
@@ -85,13 +85,13 @@ void Raytracing::Camera::render(Scene& scene, ImageWriter& image)
             // Final pixel color
             color pixel_color(0, 0, 0);
 
-            std::cout << pixel_sample_sqrt << std::endl;
-
             // Sample points with stratified sampling for antialisasing
             for (int sample_row = 0; sample_row < pixel_sample_sqrt; sample_row++)
             {
                 for (int sample_column = 0; sample_column < pixel_sample_sqrt; sample_column++)
                 {
+
+                    
                     // Get ray sample around pixel location
                     auto sample_ray = get_ray_sample(pixel_row, pixel_column, sample_row, sample_column);
 
@@ -100,20 +100,17 @@ void Raytracing::Camera::render(Scene& scene, ImageWriter& image)
                 }
             }
 
-            std::cout << "Here 12" << std::endl;
             // Avarage samples
             pixel_color /= scene.samples_per_pixel;
 
             // Compute color
             tuple<uint8_t, uint8_t, uint8_t, uint8_t> RGBA_color = compute_color(pixel_color);
-            std::cout << "Here 13" << std::endl;
 
             // Determine pixel position in image buffer
             int pixel_position = 4 * (image.get_width() * pixel_row + pixel_column);
 
             // Save pixel color into image buffer (row-major order)
             image.write_pixel(pixel_position, RGBA_color);
-            std::cout << "Here 14" << std::endl;
         }
     }
 
@@ -184,9 +181,7 @@ color Raytracing::Camera::ray_color(const shared_ptr<Ray>& sample_ray, int depth
         color color_from_emission = hrec->material->emitted(sample_ray, hrec);
 
         // Material scattering details
-        shared_ptr<scatter_record> srec;
-
-        // std::cout << "Here 4" << std::endl;
+        shared_ptr<scatter_record> srec = make_shared<scatter_record>();
 
         // If the ray does not scatter, it has hit an emissive material
         if (!hrec->material->scatter(sample_ray, hrec, srec))
@@ -223,34 +218,27 @@ color Raytracing::Camera::ray_color(const shared_ptr<Ray>& sample_ray, int depth
         }
         else
         {
-            // std::cout << "Here 5" << std::endl;
             // Generate mixture of PDFs (hittable pdf + material pdf)
             auto _hittables_pdf = make_shared<hittables_pdf>(hittables_with_pdf, surface_hit_point);
             auto _mixture_pdf = make_shared<mixture_pdf>(_hittables_pdf, material_pdf);
             sampling_pdf = _mixture_pdf;
-            // std::cout << "Here 6" << std::endl;
         }
 
-        // std::cout << "Here 7" << std::endl;
         // Generate random scatter ray using the sampling PDF
         vec3 scatter_direction = sampling_pdf->generate();
         auto scattered = make_shared<Ray>(surface_hit_point, scatter_direction, sample_ray->time());
-        // std::cout << "Here 8" << std::endl;
 
         // Get the weight of the generated scatter ray sample
         auto sampling_pdf_value = sampling_pdf->value(scatter_direction);
-        // std::cout << "Here 9" << std::endl;
 
         // Get the material's associated scattering PDF
         auto scattering_pdf_value = hrec->material->scattering_pdf_value(sample_ray, hrec, scattered);
-        // std::cout << "Here 10" << std::endl;
 
         // Update reflecting rays count
         reflected_rays++;
 
         // Recursive call
         color sample_color = ray_color(scattered, depth - 1, scene);
-        // std::cout << "Here 11" << std::endl;
 
         // Bidirectional Reflectance Distribution Function (BRDF)
         color_from_scatter = (srec->attenuation * scattering_pdf_value * sample_color) / sampling_pdf_value;
@@ -259,7 +247,6 @@ color Raytracing::Camera::ray_color(const shared_ptr<Ray>& sample_ray, int depth
         return color_from_emission + color_from_scatter;
     }
     default: // Unknown hit
-        std::cout << hit_object_type << std::endl;
         unknwon_rays++;
         return scene.sky_blend ? sky_blend(sample_ray) : scene.background;
     }

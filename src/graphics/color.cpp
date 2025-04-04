@@ -1,7 +1,7 @@
 // Headers
 #include "core/core.hpp"
 #include "color.hpp"
-#include "utils/interval.hpp"
+#include "math/interval.hpp"
 
 // Usings
 using Raytracing::color;

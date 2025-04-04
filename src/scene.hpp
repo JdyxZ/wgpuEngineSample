@@ -57,6 +57,7 @@ namespace Raytracing
         void start();
         void end();
         void add(shared_ptr<Hittable> object) override;
+        void clear() override;
         void build(Camera& camera, ImageWriter& image);
     };
 }

@@ -8,7 +8,7 @@
 #include "utils/image_writer.hpp"
 #include "scene_stats.hpp"
 #include "scenes.hpp"
-#include "bvh.hpp"
+#include "hittables/bvh.hpp"
 
 // Usings
 using Raytracing::Camera;
@@ -16,6 +16,7 @@ using Raytracing::ImageWriter;
 
 Raytracing::Scene::Scene()
 {
+    stats = make_shared<scene_stats>();
     full_pipeline = make_shared<Chrono>();
     build_chrono = make_shared<Chrono>();
 }
@@ -40,6 +41,12 @@ void Raytracing::Scene::add(shared_ptr<Hittable> object)
         hittables_with_pdf.push_back(object);
 
     stats->add(object);
+}
+
+void Raytracing::Scene::clear()
+{
+    hittable_list::clear();
+    stats.reset(new scene_stats());
 }
 
 void Raytracing::Scene::build(Camera& camera, ImageWriter& image)

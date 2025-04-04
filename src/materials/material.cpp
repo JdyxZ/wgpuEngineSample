@@ -2,7 +2,7 @@
 #include "core/core.hpp"
 #include "material.hpp"
 #include "texture.hpp"
-#include "pdf.hpp"
+#include "math/pdf.hpp"
 #include "ray.hpp"
 #include "hittables/hittable.hpp"
 #include "utils/utilities.hpp"

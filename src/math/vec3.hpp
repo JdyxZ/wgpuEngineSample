@@ -1,7 +1,7 @@
 #pragma once
 
 // Headers
-#include "../core/core.hpp"
+#include "core/core.hpp"
 #include "vec.hpp"
 
 // Forward declarations

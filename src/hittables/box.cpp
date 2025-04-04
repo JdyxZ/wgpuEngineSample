@@ -2,10 +2,10 @@
 #include "core/core.hpp"
 #include "box.hpp"
 #include "quad.hpp"
-#include "aabb.hpp"
-#include "bvh.hpp"
+#include "math/aabb.hpp"
+#include "hittables/bvh.hpp"
 #include "hittable_list.hpp"
-#include "utils/interval.hpp"
+#include "math/interval.hpp"
 #include "math/matrix.hpp"
 #include "utils/utilities.hpp"
 

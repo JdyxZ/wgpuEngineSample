@@ -2,7 +2,7 @@
 #include "core/core.hpp"
 #include "scenes.hpp"
 #include "scene.hpp"
-#include "bvh.hpp"
+#include "hittables/bvh.hpp"
 #include "core/framework.hpp"
 #include "graphics/camera.hpp"
 #include "utils/image_writer.hpp"

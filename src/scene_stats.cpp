@@ -6,7 +6,7 @@
 #include "hittables/quad.hpp"
 #include "hittables/mesh.hpp"
 #include "materials/material.hpp"
-#include "bvh.hpp"
+#include "hittables/bvh.hpp"
 
 // Usings
 using Raytracing::Mesh;
@@ -15,6 +15,39 @@ using Raytracing::Material;
 scene_stats::scene_stats()
 {
     bvh_chrono = make_shared<Chrono>();
+}
+
+int scene_stats::get_bvh_depth(const shared_ptr<Hittable> object)
+{
+    switch (object->get_type())
+    {
+   
+    case BOX:
+    {
+        auto box_ptr = std::dynamic_pointer_cast<Box>(object);
+        return box_ptr->stats()->bvh_depth;
+    }
+    case MESH:
+    {
+        auto mesh_ptr = std::dynamic_pointer_cast<Mesh>(object);
+        return mesh_ptr->stats()->bvh_depth;
+    }
+    case BVH_NODE:
+    {
+        auto bvh_node_ptr = std::dynamic_pointer_cast<bvh_node>(object);
+        auto stats = bvh_node_ptr->get_stats();
+
+        if (stats == nullptr)
+        {
+            string error = Logger::error("BVH_NODE", "BVH node stats is null!!!");
+            throw std::runtime_error(error);
+        }
+
+        return stats->bvh_depth;;
+    }
+    }
+
+    return 0;
 }
 
 void scene_stats::add(const shared_ptr<Hittable> object)

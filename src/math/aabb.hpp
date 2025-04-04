@@ -2,7 +2,7 @@
 
 // Headers
 #include "math/vec3.hpp"
-#include "utils/interval.hpp"
+#include "interval.hpp"
 
 // Forward declarations
 class Ray;

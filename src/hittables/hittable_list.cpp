@@ -2,7 +2,7 @@
 #include "core/core.hpp"
 #include "hittable_list.hpp"
 #include "hittable.hpp"
-#include "utils/interval.hpp"
+#include "math/interval.hpp"
 
 hittable_list::hittable_list() {}
 

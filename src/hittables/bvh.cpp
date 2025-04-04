@@ -3,7 +3,7 @@
 #include "bvh.hpp"
 #include "hittables/hittable_list.hpp"
 #include "utils/chrono.hpp"
-#include "aabb.hpp"
+#include "math/aabb.hpp"
 
 // Usings
 using Raytracing::AABB;
@@ -18,8 +18,8 @@ bvh_node::bvh_node(hittable_list list)
 
     stats->bvh_chrono->end();
 
-    stats->bvh_depth += instance.depth;
-    stats->bvh_nodes += instance.nodes;
+    stats->bvh_depth = instance.depth + 1;
+    stats->bvh_nodes += instance.nodes + 1;
 
     instance.stats = stats;
 
@@ -51,18 +51,27 @@ bvh_node::bvh_node(vector<shared_ptr<Hittable>>& objects, size_t start, size_t e
         left = right = object;
 
         // Calculate depth and nodes
-        depth = 0;
+        auto node_depth = bvh_stats::get_bvh_depth(object);
+        depth = node_depth == 0 ? 0 : node_depth + 1;
         nodes = 1; // Same object for left and and right leaf
+
+        // Process object for bvh stats
         stats->add(object);
     }
     else if (object_span == 2)
     {
+        //Assign objects to leaves
         auto left_object = objects[start];
         auto right_object = objects[start + 1];
         left = left_object;
         right = right_object;
-        depth = 0;
+
+        // Calculate depth and nodes
+        auto node_depth = std::max(bvh_stats::get_bvh_depth(left_object), bvh_stats::get_bvh_depth(right_object));
+        depth = node_depth == 0 ? 0 : node_depth + 1;
         nodes = 2;
+
+        // Process objects for bvh stats
         stats->add(left_object);
         stats->add(right_object);
     }
@@ -78,7 +87,7 @@ bvh_node::bvh_node(vector<shared_ptr<Hittable>>& objects, size_t start, size_t e
 
         // Update depth and nodes based on the children
         depth = std::max(left_node->depth, right_node->depth) + 1;
-        nodes = 1 + left_node->nodes + right_node->nodes;
+        nodes = 2 + left_node->nodes + right_node->nodes;
 
         // Assign nodes to hittable pointers
         left = left_node;
@@ -88,7 +97,7 @@ bvh_node::bvh_node(vector<shared_ptr<Hittable>>& objects, size_t start, size_t e
 
 bool bvh_node::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<hit_record>& rec) const
 {
-    auto local_ray = transformed ? transform_ray(r) ? r;
+    auto local_ray = transformed ? transform_ray(r) : r;
 
     if (!bbox->hit(local_ray, ray_t))
         return false;

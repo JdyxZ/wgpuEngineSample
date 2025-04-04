@@ -2,8 +2,8 @@
 #include "core/core.hpp"
 #include "constant_medium.hpp"
 #include "ray.hpp"
-#include "aabb.hpp"
-#include "utils/interval.hpp"
+#include "math/aabb.hpp"
+#include "math/interval.hpp"
 #include "materials/material.hpp"
 #include "utils/utilities.hpp"
 
@@ -61,6 +61,7 @@ bool constant_medium::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<h
     rec->normal = vec3(1, 0, 0);  // arbitrary
     rec->front_face = true;     // also arbitrary
     rec->material = phase_function;
+    rec->type = type;
 
     if(transformed)
         transform_hit_record(rec);

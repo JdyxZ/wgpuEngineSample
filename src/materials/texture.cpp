@@ -4,7 +4,7 @@
 #include "math/perlin.hpp"
 #include "utils/image_reader.hpp"
 #include "graphics/color.hpp"
-#include "utils/interval.hpp"
+#include "math/interval.hpp"
 
 // Usings
 using Raytracing::color;

@@ -1,7 +1,7 @@
 // Headers
 #include "core/core.hpp" 
 #include "quad.hpp"
-#include "aabb.hpp"
+#include "math/aabb.hpp"
 #include "ray.hpp"
 #include "utils/utilities.hpp"
 #include "math/matrix.hpp"
@@ -75,6 +75,7 @@ bool Quad::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<hit_record>&
     quad_rec->material = material;
     quad_rec->texture_coordinates = make_pair(alpha, beta);
     quad_rec->determine_normal_direction(local_ray->direction(), normal);
+    quad_rec->type = type;
 
     // Polymorphic assignment
     rec = quad_rec;
