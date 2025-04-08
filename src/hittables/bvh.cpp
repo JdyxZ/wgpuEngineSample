@@ -32,15 +32,15 @@ bvh_node::bvh_node(vector<shared_ptr<Hittable>>& objects, size_t start, size_t e
     type = BVH_NODE;
 
     // Build the bounding box of the span of source objects.
-    bbox = make_shared<AABB>(AABB::empty);
+    bbox = make_shared<AABB>(AABB::empty());
     for (size_t object_index = start; object_index < end; object_index++)
         bbox = make_shared<AABB>(bbox, objects[object_index]->bounding_box());
 
     int axis = bbox->longest_axis();
 
     auto comparator = (axis == 0) ? box_x_compare
-        : (axis == 1) ? box_y_compare
-        : box_z_compare;
+                    : (axis == 1) ? box_y_compare
+                                  : box_z_compare;
 
     size_t object_span = end - start;
 

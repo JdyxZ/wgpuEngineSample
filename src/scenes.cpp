@@ -417,6 +417,7 @@ void Raytracing::book2_final_scene(Scene& scene, Camera& camera, ImageWriter& im
     scene.bounce_max_depth = 40;
     scene.samples_per_pixel = 100;
     int boxes_per_side = 20;
+    int number_of_spheres = 1000;
 
     // Textures
     auto earth_texture = make_shared<ImageTexture>("earthmap.jpg");
@@ -480,7 +481,7 @@ void Raytracing::book2_final_scene(Scene& scene, Camera& camera, ImageWriter& im
     // Transformed spheres
     hittable_list spheres;
     shared_ptr<bvh_node> spheres_bvh_tree;
-    for (int j = 0; j < 1000; j++)
+    for (int j = 0; j < number_of_spheres; j++)
     {
         auto sphere = make_shared<Sphere>(point3::random(0, 165), 10, white_material);
         spheres.add(sphere);

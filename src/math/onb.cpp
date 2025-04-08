@@ -10,7 +10,7 @@ ONB::ONB(const vec3& n)
     vec3 a = (fabs(n.x) > 0.9) ? y_axis : x_axis;
 
     vec3 w = n;
-    vec3 v = cross(w, a);
+    vec3 v = cross(w, a).normalize();
     vec3 u = cross(w, v);
 
     axis[0] = u;
@@ -36,5 +36,5 @@ const vec3& ONB::w() const
 
 vec3 ONB::transform(const vec3& v) const
 {
-    return (v[0] * axis[0]) + (v[1] * axis[1]) + (v[2] * axis[2]);
+    return (v.x * axis[0]) + (v.y * axis[1]) + (v.z * axis[2]);
 }

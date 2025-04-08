@@ -6,14 +6,6 @@
 Raytracing::AABB::AABB() 
 {
     // The default AABB is empty, since intervals are empty by default.
-} 
-
-Raytracing::AABB::AABB(const Interval& x, const Interval& y, const Interval& z)
-{
-    this->x = make_shared<Interval>(x);
-    this->y = make_shared<Interval>(y);
-    this->z = make_shared<Interval>(z);
-    pad_to_minimums();
 }
 
 Raytracing::AABB::AABB(const point3& a, const point3& b)
@@ -45,6 +37,26 @@ Raytracing::AABB::AABB(const AABB& box0, const AABB& box1)
 }
 
 Raytracing::AABB::AABB(const shared_ptr<AABB>& box0, const shared_ptr<AABB>& box1) : AABB(*box0, *box1) {}
+
+const Raytracing::AABB& Raytracing::AABB::empty()
+{
+    static const AABB instance(Interval::empty, Interval::empty, Interval::empty);
+    return instance;
+}
+
+const Raytracing::AABB& Raytracing::AABB::universe()
+{
+    static const AABB instance(Interval::universe, Interval::universe, Interval::universe);
+    return instance;
+}
+
+Raytracing::AABB::AABB(const Interval& x, const Interval& y, const Interval& z)
+{
+    this->x = make_shared<Interval>(x);
+    this->y = make_shared<Interval>(y);
+    this->z = make_shared<Interval>(z);
+    pad_to_minimums();
+}
 
 const shared_ptr<Interval>& Raytracing::AABB::axis_interval(int n) const
 {
@@ -101,7 +113,3 @@ void Raytracing::AABB::pad_to_minimums()
     if (y->size() < delta) y = make_shared<Interval>(y->expand(delta));
     if (z->size() < delta) z = make_shared<Interval>(z->expand(delta));
 }
-
-// Static members
-const Raytracing::AABB Raytracing::AABB::empty = Raytracing::AABB(Interval::empty, Interval::empty, Interval::empty);
-const Raytracing::AABB Raytracing::AABB::universe = Raytracing::AABB(Interval::universe, Interval::universe, Interval::universe);

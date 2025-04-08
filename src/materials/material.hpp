@@ -57,6 +57,8 @@ namespace Raytracing
         MATERIAL_TYPE type = NONE;
     };
 
+    /************ Diffuse Materials ************/
+
     class Lambertian : public Material
     {
     public:
@@ -69,6 +71,21 @@ namespace Raytracing
     private:
         shared_ptr<Texture> texture;
     };
+
+    class Isotropic : public Material
+    {
+    public:
+        Isotropic(const color& albedo);
+        Isotropic(shared_ptr<Texture> texture);
+
+        bool scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, shared_ptr<scatter_record>& srec) const override;
+        double scattering_pdf_value(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, const shared_ptr<Ray>& scattered_ray) const override;
+
+    private:
+        shared_ptr<Texture> texture;
+    };
+
+    /************ Specular Materials ************/
 
     class Metal : public Material
     {
@@ -95,6 +112,8 @@ namespace Raytracing
         static double reflectance(double cosine, double refraction_index);
     };
 
+    /************ Emissive Materials ************/
+
     class DiffuseLight : public Material
     {
     public:
@@ -102,19 +121,6 @@ namespace Raytracing
         DiffuseLight(const color& emit);
 
         color emitted(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec) const override;
-
-    private:
-        shared_ptr<Texture> texture;
-    };
-
-    class Isotropic : public Material
-    {
-    public:
-        Isotropic(const color& albedo);
-        Isotropic(shared_ptr<Texture> texture);
-
-        bool scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, shared_ptr<scatter_record>& srec) const override;
-        double scattering_pdf_value(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, const shared_ptr<Ray>& scattered_ray) const override;
 
     private:
         shared_ptr<Texture> texture;

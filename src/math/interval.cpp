@@ -13,9 +13,6 @@ Interval::Interval()
 
 Interval::Interval(double min, double max)
 {
-    if (min > max)
-        std::swap(min, max);
-
     this->min = min;
     this->max = max;
 }

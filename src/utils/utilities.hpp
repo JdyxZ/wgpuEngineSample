@@ -124,8 +124,8 @@ inline vec3 sample_square() // Returns the vector to a random point in the [-.5,
 
 inline vec3 sample_square_stratified(int sample_row, int sample_column, double pixel_sample_sqrt_inv) // Returns the vector to a random point in the square sub-pixel specified by grid indices sample_row and sample_column, for an idealized unit square pixel [-.5,-.5] to [+.5,+.5].
 {
-    auto px = ((sample_row + random_double()) * pixel_sample_sqrt_inv) - 0.5;
-    auto py = ((sample_column + random_double()) * pixel_sample_sqrt_inv) - 0.5;
+    auto px = ((sample_column + random_double()) * pixel_sample_sqrt_inv) - 0.5;
+    auto py = ((sample_row + random_double()) * pixel_sample_sqrt_inv) - 0.5;
 
     return vec3(px, py, 0);
 }

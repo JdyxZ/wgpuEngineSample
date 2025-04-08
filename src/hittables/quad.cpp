@@ -53,7 +53,7 @@ bool Quad::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<hit_record>&
     auto t = (D - dot(normal, local_ray->origin())) / denom;
 
     // Return false if the hit point parameter t is outside the ray interval.
-    if (!ray_t.surrounds(t))
+    if (!ray_t.contains(t))
         return false;
 
     // Intersection point

@@ -28,7 +28,7 @@ cosine_hemisphere_pdf::cosine_hemisphere_pdf(const vec3& normal)
 
 double cosine_hemisphere_pdf::value(const vec3& direction) const
 {
-    auto cosine_theta = dot(unit_vector(direction), uvw->w());
+    auto cosine_theta = dot(uvw->w(), unit_vector(direction));
     return std::fmax(0, cosine_theta / pi);
 }
 
@@ -41,9 +41,9 @@ vec3 cosine_hemisphere_pdf::generate() const
     // if (scatter_direction.near_zero())
         // scatter_direction = uvw.w(); 
 
-    // Transform the scatter direction to the uvw space and normalize it
+    // Transform the scatter direction to the uvw space
     scatter_direction = uvw->transform(scatter_direction);
-    scatter_direction.normalize();
+
     return scatter_direction;
 }
 

@@ -11,6 +11,8 @@
 using Raytracing::Texture;
 using Raytracing::color;
 
+// ****** Material Class ****** //
+
 bool Raytracing::Material::scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, shared_ptr<scatter_record>& srec) const
 {
     return false;
@@ -30,6 +32,8 @@ const MATERIAL_TYPE Raytracing::Material::get_type() const
 {
     return type;
 }
+
+// ****** Lambertian Class ****** //
 
 Raytracing::Lambertian::Lambertian(const color& albedo) : texture(make_shared<SolidColor>(albedo))
 { 
@@ -54,9 +58,38 @@ bool Raytracing::Lambertian::scatter(const shared_ptr<Ray>& incoming_ray, const 
 
 double Raytracing::Lambertian::scattering_pdf_value(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, const shared_ptr<Ray>& scattered_ray) const
 {
-    auto cos_theta = dot(rec->normal, unit_vector(scattered_ray->direction()));
-    return cos_theta < 0 ? 0 : cos_theta / pi;
+    auto cosine_theta = dot(rec->normal, unit_vector(scattered_ray->direction()));
+    return std::fmax(0, cosine_theta / pi);
 }
+
+// ****** Isotropic Class ****** //
+
+Raytracing::Isotropic::Isotropic(const color& albedo) : texture(make_shared<SolidColor>(albedo))
+{
+    type = ISOTROPIC;
+}
+
+Raytracing::Isotropic::Isotropic(shared_ptr<Texture> texture) : texture(texture)
+{
+    type = ISOTROPIC;
+}
+
+bool Raytracing::Isotropic::scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, shared_ptr<scatter_record>& srec) const
+{
+    srec->is_specular = false;
+    srec->specular_ray = nullptr;
+    srec->pdf = make_shared<uniform_sphere_pdf>();
+    srec->attenuation = texture->value(rec->texture_coordinates, rec->p);
+    srec->scatter_type = REFLECT;
+    return true;
+}
+
+double Raytracing::Isotropic::scattering_pdf_value(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, const shared_ptr<Ray>& scattered_ray) const
+{
+    return 1 / (4 * pi);
+}
+
+// ****** Metal Class ****** //
 
 Raytracing::Metal::Metal(const color& albedo, double fuzz) : albedo(albedo), fuzz(fuzz < 1 ? fuzz : 1) { type = METAL; }
 
@@ -81,6 +114,8 @@ bool Raytracing::Metal::scatter(const shared_ptr<Ray>& incoming_ray, const share
 
     return true;
 }
+
+// ****** Dielectric Class ****** //
 
 Raytracing::Dielectric::Dielectric(double refraction_index) : refraction_index(refraction_index)
 { 
@@ -139,6 +174,8 @@ double Raytracing::Dielectric::reflectance(double cosine, double refraction_inde
     return r0 + (1 - r0) * std::pow((1 - cosine), 5);
 }
 
+// ****** DiffuseLight Class ****** //
+
 Raytracing::DiffuseLight::DiffuseLight(shared_ptr<Texture> texture) : texture(texture)
 { 
     type = DIFFUSE_LIGHT; 
@@ -155,29 +192,4 @@ color Raytracing::DiffuseLight::emitted(const shared_ptr<Ray>& incoming_ray, con
         return color(0, 0, 0);
 
     return texture->value(rec->texture_coordinates, rec->p);
-}
-
-Raytracing::Isotropic::Isotropic(const color& albedo) : texture(make_shared<SolidColor>(albedo))
-{ 
-    type = ISOTROPIC; 
-}
-
-Raytracing::Isotropic::Isotropic(shared_ptr<Texture> texture) : texture(texture)
-{ 
-    type = ISOTROPIC; 
-}
-
-bool Raytracing::Isotropic::scatter(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, shared_ptr<scatter_record>& srec) const
-{
-    srec->is_specular = false;
-    srec->specular_ray = nullptr;
-    srec->pdf = make_shared<uniform_sphere_pdf>();
-    srec->attenuation = texture->value(rec->texture_coordinates, rec->p);
-    srec->scatter_type = REFLECT;
-    return true;
-}
-
-double Raytracing::Isotropic::scattering_pdf_value(const shared_ptr<Ray>& incoming_ray, const shared_ptr<hit_record>& rec, const shared_ptr<Ray>& scattered_ray) const
-{
-    return 1 / (4 * pi);
 }

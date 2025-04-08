@@ -90,8 +90,6 @@ void Raytracing::Camera::render(Scene& scene, ImageWriter& image)
             {
                 for (int sample_column = 0; sample_column < pixel_sample_sqrt; sample_column++)
                 {
-
-                    
                     // Get ray sample around pixel location
                     auto sample_ray = get_ray_sample(pixel_row, pixel_column, sample_row, sample_column);
 
@@ -116,6 +114,7 @@ void Raytracing::Camera::render(Scene& scene, ImageWriter& image)
 
     // End render chrono
     render_chrono->end();
+    std::cout << render_chrono->elapsed_to_string() << std::endl,
 
     // Progress info end line
     std::cout << std::endl;
@@ -144,6 +143,7 @@ const shared_ptr<Ray> Raytracing::Camera::get_ray_sample(int pixel_row, int pixe
 
 color Raytracing::Camera::ray_color(const shared_ptr<Ray>& sample_ray, int depth, const Scene& scene)
 {
+
     // If we've exceeded the ray bounce limit, no more light is gathered.
     if (depth <= 0)
         return color(0, 0, 0);
@@ -158,8 +158,7 @@ color Raytracing::Camera::ray_color(const shared_ptr<Ray>& sample_ray, int depth
     if (!scene.intersect(sample_ray, ray_t, hrec))
     {
         background_rays++;
-        auto result = scene.sky_blend ? sky_blend(sample_ray) : scene.background;
-        return result;
+        return scene.sky_blend ? sky_blend(sample_ray) : scene.background;
     }
 
     // Hit object type

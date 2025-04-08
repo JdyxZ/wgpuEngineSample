@@ -13,7 +13,6 @@ namespace Raytracing
     {
     public:
         shared_ptr<Interval> x, y, z;
-        static const AABB empty, universe;
 
         AABB();
         AABB(const Interval& x, const Interval& y, const Interval& z);
@@ -21,6 +20,9 @@ namespace Raytracing
         AABB(const point3& a, const point3& b, const point3& c);
         AABB(const AABB& box0, const AABB& box1);
         AABB(const shared_ptr<AABB>& box0, const shared_ptr<AABB>& box1);
+
+        static const AABB& empty();
+        static const AABB& universe();
 
         const shared_ptr<Interval>& axis_interval(int n) const;
         int longest_axis() const; // Returns the index of the longest axis of the bounding box.
