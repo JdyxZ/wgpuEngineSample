@@ -5,6 +5,7 @@
 #include "graphics/raytracing_renderer.hpp"
 #include "graphics/renderer_storage.h"
 #include "engine/scene.h"
+#include "framework/parsers/parse_gltf.h"
 
 int RayTracingEngine::initialize(Renderer* renderer, sEngineConfiguration configuration)
 {
@@ -12,13 +13,20 @@ int RayTracingEngine::initialize(Renderer* renderer, sEngineConfiguration config
 
     if (error) return error;
 
-    main_scene = new Scene("main_scene");
-
     return error;
 }
 
 int RayTracingEngine::post_initialize()
 {
+    main_scene = new Scene("main_scene");
+
+    vector<Node*> scene_nodes;
+
+    GltfParser gltf_parser;
+    gltf_parser.parse("models/github_assets/DamagedHelmet/glTF-Binary/DamagedHelmet.glb", scene_nodes);
+
+    main_scene->add_nodes(scene_nodes);
+
     return Engine::post_initialize();
 }
 

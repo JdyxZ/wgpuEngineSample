@@ -28,9 +28,9 @@ bool Raytracing::Mesh::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<
     if (!transformed)
         return surfaces->hit(r, ray_t, rec);
 
-    auto local_ray = transform_ray(r);
+    const auto local_ray = transform_ray(r);
 
-    bool hit = surfaces->hit(local_ray, ray_t, rec);
+    const bool hit = surfaces->hit(local_ray, ray_t, rec);
 
     if(hit)
         transform_hit_record(rec);
@@ -42,6 +42,7 @@ shared_ptr<AABB> Raytracing::Mesh::bounding_box() const
 { 
 	return bbox; 
 }
+
 const string& Raytracing::Mesh::name() const
 { 
 	return _name; 

@@ -39,14 +39,24 @@ elapsed_time Chrono::elapsed() const
     return et;
 }
 
-int Chrono::elapsed_miliseconds() const
+unsigned long long Chrono::elapsed_miliseconds() const
 {
     auto elapsed = total_elapsed;
 
     if (start_time.has_value())
         elapsed += std::chrono::high_resolution_clock::now() - start_time.value();
 
-    return int(std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count());
+    return std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+}
+
+unsigned long long Chrono::elapsed_nanoseconds() const
+{
+    auto elapsed = total_elapsed;
+
+    if (start_time.has_value())
+        elapsed += std::chrono::high_resolution_clock::now() - start_time.value();
+
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed).count();
 }
 
 std::string Chrono::elapsed_to_string() const

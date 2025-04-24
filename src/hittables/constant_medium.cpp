@@ -29,7 +29,7 @@ constant_medium::constant_medium(shared_ptr<Hittable> boundary, double density, 
 
 bool constant_medium::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<hit_record>& rec) const
 {
-    auto local_ray = transformed ? transform_ray(r) : r;
+    const auto local_ray = transformed ? transform_ray(r) : r;
 
     shared_ptr<hit_record> rec1, rec2;
 

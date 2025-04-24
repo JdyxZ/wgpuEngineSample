@@ -13,12 +13,13 @@ class RayTracingRenderer : public Renderer
 {
 private:
 
-    // Render objects
+    // Render items
     Raytracing::Scene scene;
     Raytracing::Camera camera;
     Raytracing::ImageWriter image;
     LogWriter log;
 
+    // Screen
     MeshInstance3D* screen_mesh = nullptr;
     Texture* screen_texture = nullptr;
 

@@ -54,11 +54,16 @@ void Raytracing::ImageWriter::initialize()
     Logger::info("ImageWriter", "Image frame succesfully initialized.");
 }
 
-void Raytracing::ImageWriter::write_pixel(int pixel_position, tuple<uint8_t, uint8_t, uint8_t, uint8_t> RGBA_color)
+void Raytracing::ImageWriter::write_pixel(const int pixel_row, const int pixel_column, const tuple<uint8_t, uint8_t, uint8_t, uint8_t> RGBA_color)
 {
+    // Determine pixel position in image buffer
+    int pixel_position = 4 * (width * pixel_row + pixel_column);
+
+    // Unwrap color components
     uint8_t red_byte, green_byte, blue_byte, alpha;
     std::tie<uint8_t, uint8_t, uint8_t, uint8_t>(red_byte, green_byte, blue_byte, alpha) = RGBA_color;
 
+    // Write color info to image buffer
     data[pixel_position + 0] = red_byte;
     data[pixel_position + 1] = green_byte;
     data[pixel_position + 2] = blue_byte;
@@ -112,19 +117,38 @@ int Raytracing::ImageWriter::get_height()
     return height;
 }
 
-vector<uint8_t> Raytracing::ImageWriter::get_data()
+vector<uint8_t> Raytracing::ImageWriter::get_rgb_data()
+{
+    std::vector<unsigned char> rgb_data;
+    rgb_data.reserve(width * height * 3);
+
+    for (size_t i = 0; i < data.size(); i += 4)
+    {
+        rgb_data.push_back(data[i]);        // R
+        rgb_data.push_back(data[i + 1]);    // G
+        rgb_data.push_back(data[i + 2]);    // B
+                                            // Skip A
+    }
+
+    return rgb_data;
+}
+
+vector<uint8_t> Raytracing::ImageWriter::get_rgba_data()
 {
     return data;
 }
 
 bool Raytracing::ImageWriter::savePNG()
 {
+    int channels = 4; // RGBA
     int success = stbi_write_png(image_path.c_str(), width, height, channels, data.data(), width * channels);
     return success;
 }
 
 bool Raytracing::ImageWriter::saveJPG(int quality)
 {
+    int channels = 3; // RGB
+    auto data = get_rgb_data();
     int success = stbi_write_jpg(image_path.c_str(), width, height, channels, data.data(), quality);
     return success;
 }

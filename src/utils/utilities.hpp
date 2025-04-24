@@ -115,6 +115,85 @@ inline vec3 max_vector(const vec3& v1, const vec3& v2)
     return vec3(std::fmax(v1.x, v2.x), std::fmax(v1.y, v2.y), std::fmax(v1.z, v2.z));
 }
 
+// ************** STD VECTOR UTILITIES ************** //
+
+template <typename T>
+requires std::is_arithmetic_v<T>
+T vector_mean(const vector<T>& data)
+{
+    if (data.empty())
+        return 0.0;
+
+    auto sum = std::accumulate(data.begin(), data.end(), T{ 0 });
+    auto mean = sum / data.size();
+    return static_cast<T>(mean);
+}
+
+template <typename T>
+requires std::is_arithmetic_v<T>
+T vector_min_value(const vector<T>& data)
+{
+    if (data.empty())
+        return 0.0;
+
+    auto min = *std::ranges::min_element(data);
+    return static_cast<T>(min);
+}
+
+template <typename T>
+requires std::is_arithmetic_v<T>
+T vector_max_value(const vector<T>& data)
+{
+    if (data.empty())
+        return 0.0;
+
+    auto max = *std::ranges::max_element(data);
+    return static_cast<T>(max);
+}
+
+template <typename T>
+requires std::is_arithmetic_v<T>
+T vector_standard_deviation(const vector<T>& data)
+{
+    if (data.empty())
+        return 0.0;
+
+    double avg = vector_mean(data);
+
+    auto squared_diffs = data
+        | std::views::transform([avg](T x) {
+        T diff = x - avg;
+        return diff * diff;
+            });
+
+    double sq_sum = std::accumulate(squared_diffs.begin(), squared_diffs.end(), 0.0);
+    auto standard_deviation = std::sqrt(sq_sum / data.size());
+
+    return static_cast<T>(standard_deviation);
+}
+
+template <typename T>
+requires std::is_arithmetic_v<T>
+T vector_sum(const vector<T>& data)
+{
+    auto sum = std::accumulate(data.begin(), data.end(), T{ 0 });
+    return static_cast<T>(sum);
+}
+
+template <typename T>
+requires std::is_arithmetic_v<T>
+void print_vector_statistics(const string name, const std::vector<T>& data)
+{
+    std::cout << name << " statistics:" << std::endl
+        << "\t" << "Size: " << data.size() << std::endl
+        << "\t" << "Sum: " << vector_sum(data) / pow(10,6) << std::endl
+        << "\t" << "Min: " << vector_min_value(data) << std::endl
+        << "\t" << "Max: " << vector_max_value(data) << std::endl
+        << "\t" << "Mean: " << vector_mean(data) << std::endl
+        << "\t" << "Standard Deviation: " << vector_standard_deviation(data) << std::endl
+        ;
+}
+
 // ************** SAMPLE UTILITIES ************** //
 
 inline vec3 sample_square() // Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.

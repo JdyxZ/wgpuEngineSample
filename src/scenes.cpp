@@ -318,7 +318,7 @@ void Raytracing::cornell_box(Scene& scene, Camera& camera, ImageWriter& image)
     // Quads
     auto quad1 = make_shared<Quad>(point3(555, 0, 0), vec3(0, 555, 0), vec3(0, 0, 555), green);
     auto quad2 = make_shared<Quad>(point3(0, 0, 0), vec3(0, 555, 0), vec3(0, 0, 555), red);
-    auto quad3 = make_shared<Quad>(point3(343, 554, 332), vec3(-130, 0, 0), vec3(0, 0, -105), light, nullptr, true);
+    auto quad3 = make_shared<Quad>(point3(343, 554, 332), vec3(-130, 0, 0), vec3(0, 0, -105), light);
     auto quad4 = make_shared<Quad>(point3(0, 0, 0), vec3(555, 0, 0), vec3(0, 0, 555), white);
     auto quad5 = make_shared<Quad>(point3(555, 555, 555), vec3(-555, 0, 0), vec3(0, 0, -555), white);
     auto quad6 = make_shared<Quad>(point3(0, 0, 555), vec3(555, 0, 0), vec3(0, 555, 0), white);
@@ -334,7 +334,7 @@ void Raytracing::cornell_box(Scene& scene, Camera& camera, ImageWriter& image)
     box2->rotate(y_axis, -18.0);
 
     // Glass Sphere
-    auto sphere1 = make_shared<Sphere>(point3(190, 90, 190), 90, glass, nullptr, true);
+    auto sphere1 = make_shared<Sphere>(point3(190, 90, 190), 90, glass);
 
     // Mesh
     auto mesh = load_obj("cube\\cube.obj");
@@ -346,9 +346,9 @@ void Raytracing::cornell_box(Scene& scene, Camera& camera, ImageWriter& image)
     scene.add(quad4);
     scene.add(quad5);
     scene.add(quad6);
-    // scene.add(box1);
-    // scene.add(box2);
-    scene.add(sphere1);
+    scene.add(box1);
+    scene.add(box2);
+    // scene.add(sphere1);
     if (mesh) scene.add(mesh);
 }
 

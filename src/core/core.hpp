@@ -27,6 +27,9 @@
 #include <type_traits>
 #include <utility>
 #include <windows.h>
+#include <numeric>
+#include <ranges>
+#include <concepts>
 
 // C++ std usings
 using std::make_shared;

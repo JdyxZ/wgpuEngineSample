@@ -58,7 +58,7 @@ void Raytracing::Scene::build(Camera& camera, ImageWriter& image)
     this->build_chrono->start();
 
     // Choose rendering scene
-    switch (9)
+    switch (7)
     {
     case 0:
         Raytracing::book1_final_scene(*this, camera, image);

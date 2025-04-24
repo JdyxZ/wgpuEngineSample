@@ -11,18 +11,18 @@ Raytracing::AABB::AABB()
 Raytracing::AABB::AABB(const point3& a, const point3& b)
 {
     // Treat the two points a and b as extrema for the bounding box, so we don't require a particular minimum/maximum coordinate order.
-    x = make_shared<Interval>(std::min(a[0], b[0]), std::max(a[0], b[0]));
-    y = make_shared<Interval>(std::min(a[1], b[1]), std::max(a[1], b[1]));
-    z = make_shared<Interval>(std::min(a[2], b[2]), std::max(a[2], b[2]));
+    x = make_shared<Interval>(std::min(a.x, b.x), std::max(a.x, b.x));
+    y = make_shared<Interval>(std::min(a.y, b.y), std::max(a.y, b.y));
+    z = make_shared<Interval>(std::min(a.z, b.z), std::max(a.z, b.z));
 
     pad_to_minimums();
 }
 
 Raytracing::AABB::AABB(const point3& a, const point3& b, const point3& c)
 {
-    x = make_shared<Interval>(std::min({ a[0], b[0], c[0] }), std::max({ a[0], b[0], c[0] }));
-    y = make_shared<Interval>(std::min({ a[1], b[1], c[1] }), std::max({ a[1], b[1], c[1] }));
-    z = make_shared<Interval>(std::min({ a[2], b[2], c[2] }), std::max({ a[2], b[2], c[2] }));
+    x = make_shared<Interval>(std::min({ a.x, b.x, c.x }), std::max({ a.x, b.x, c.x }));
+    y = make_shared<Interval>(std::min({ a.y, b.y, c.y }), std::max({ a.y, b.y, c.y }));
+    z = make_shared<Interval>(std::min({ a.z, b.z, c.z }), std::max({ a.z, b.z, c.z }));
 
     pad_to_minimums();
 }
@@ -34,9 +34,18 @@ Raytracing::AABB::AABB(const AABB& box0, const AABB& box1)
     x = make_shared<Interval>(*box0.x, *box1.x);
     y = make_shared<Interval>(*box0.y, *box1.y);
     z = make_shared<Interval>(*box0.z, *box1.z);
+
+    pad_to_minimums();
 }
 
-Raytracing::AABB::AABB(const shared_ptr<AABB>& box0, const shared_ptr<AABB>& box1) : AABB(*box0, *box1) {}
+Raytracing::AABB::AABB(const Interval& x, const Interval& y, const Interval& z)
+{
+    this->x = make_shared<Interval>(x);
+    this->y = make_shared<Interval>(y);
+    this->z = make_shared<Interval>(z);
+
+    pad_to_minimums();
+}
 
 const Raytracing::AABB& Raytracing::AABB::empty()
 {
@@ -48,14 +57,6 @@ const Raytracing::AABB& Raytracing::AABB::universe()
 {
     static const AABB instance(Interval::universe, Interval::universe, Interval::universe);
     return instance;
-}
-
-Raytracing::AABB::AABB(const Interval& x, const Interval& y, const Interval& z)
-{
-    this->x = make_shared<Interval>(x);
-    this->y = make_shared<Interval>(y);
-    this->z = make_shared<Interval>(z);
-    pad_to_minimums();
 }
 
 const shared_ptr<Interval>& Raytracing::AABB::axis_interval(int n) const

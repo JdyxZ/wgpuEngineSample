@@ -104,17 +104,13 @@ void Raytracing::Camera::render(Scene& scene, ImageWriter& image)
             // Compute color
             tuple<uint8_t, uint8_t, uint8_t, uint8_t> RGBA_color = compute_color(pixel_color);
 
-            // Determine pixel position in image buffer
-            int pixel_position = 4 * (image.get_width() * pixel_row + pixel_column);
-
             // Save pixel color into image buffer (row-major order)
-            image.write_pixel(pixel_position, RGBA_color);
+            image.write_pixel(pixel_row, pixel_column, RGBA_color);
         }
     }
 
     // End render chrono
     render_chrono->end();
-    std::cout << render_chrono->elapsed_to_string() << std::endl,
 
     // Progress info end line
     std::cout << std::endl;
@@ -135,15 +131,15 @@ const shared_ptr<Ray> Raytracing::Camera::get_ray_sample(int pixel_row, int pixe
 
     auto ray_origin = (defocus_angle <= 0) ? lookfrom : defocus_disk_sample(lookfrom, defocus_disk_u, defocus_disk_v);
     auto ray_direction = pixel_sample - ray_origin;
-
     auto ray_time = random_double();
 
-    return make_shared<Ray>(ray_origin, ray_direction, ray_time);
+    auto ray = make_shared<Ray>(ray_origin, ray_direction, ray_time);
+
+    return ray;
 }
 
 color Raytracing::Camera::ray_color(const shared_ptr<Ray>& sample_ray, int depth, const Scene& scene)
 {
-
     // If we've exceeded the ray bounce limit, no more light is gathered.
     if (depth <= 0)
         return color(0, 0, 0);
@@ -154,7 +150,7 @@ color Raytracing::Camera::ray_color(const shared_ptr<Ray>& sample_ray, int depth
     // Define ray intersection interval
     Interval ray_t(scene.min_hit_distance, infinity);
 
-    // Background hit
+    // Background hit  
     if (!scene.intersect(sample_ray, ray_t, hrec))
     {
         background_rays++;

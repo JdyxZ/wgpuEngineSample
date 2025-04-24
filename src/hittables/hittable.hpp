@@ -45,6 +45,7 @@ public:
     shared_ptr<Raytracing::Material> material;
     pair<double, double> texture_coordinates;
     PRIMITIVE type = NOT_SPECIFIED;
+    vector<unsigned long long> elapsed_nanoseconds;
 
     virtual ~hit_record() = default; 
 

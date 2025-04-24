@@ -23,7 +23,8 @@ public:
     void start();
     void end();
     elapsed_time elapsed() const;
-    int elapsed_miliseconds() const;
+    unsigned long long elapsed_miliseconds() const;
+    unsigned long long elapsed_nanoseconds() const;
     string elapsed_to_string() const;
 
     Chrono& operator+=(const Chrono& c);

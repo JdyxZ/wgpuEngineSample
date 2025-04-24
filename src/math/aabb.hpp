@@ -15,11 +15,10 @@ namespace Raytracing
         shared_ptr<Interval> x, y, z;
 
         AABB();
-        AABB(const Interval& x, const Interval& y, const Interval& z);
         AABB(const point3& a, const point3& b);
         AABB(const point3& a, const point3& b, const point3& c);
         AABB(const AABB& box0, const AABB& box1);
-        AABB(const shared_ptr<AABB>& box0, const shared_ptr<AABB>& box1);
+        AABB(const Interval& x, const Interval& y, const Interval& z);
 
         static const AABB& empty();
         static const AABB& universe();

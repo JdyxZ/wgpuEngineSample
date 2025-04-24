@@ -56,11 +56,8 @@ Box::Box(point3 p0, point3 p1, const shared_ptr<Material>& material, const share
 	sides_list.add(quad6);
 	sides = make_shared<bvh_node>(sides_list);
 
-	// Construct the bounding box of the box
-	Interval x = Interval(min.x, max.x);
-	Interval y = Interval(min.y, max.y);
-	Interval z = Interval(min.z, max.z);
-	bbox = make_shared<AABB>(x, y, z);
+    // Set bvh bounding box as the bounding box of the box
+    bbox = sides->bounding_box();
 }
 
 bool Box::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<hit_record>& rec) const
@@ -68,9 +65,9 @@ bool Box::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<hit_record>& 
     if (!transformed)
         return sides->hit(r, ray_t, rec);
 
-    auto local_ray = transform_ray(r);
+    const auto local_ray = transform_ray(r);
 
-    bool hit = sides->hit(local_ray, ray_t, rec);
+    const bool hit = sides->hit(local_ray, ray_t, rec);
 
     if (hit)
         transform_hit_record(rec);

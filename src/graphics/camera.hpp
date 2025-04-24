@@ -64,6 +64,9 @@ namespace Raytracing
         int    pixel_sample_sqrt;	    // Square root of samples per pixel
         double pixel_sample_sqrt_inv;   // Inverse of square root of samples per pixel
 
+        // Auxiliar variables
+        vector<unsigned long long> elapsed_nanoseconds;
+
         const shared_ptr<Ray> get_ray_sample(int pixel_row, int pixel_column, int sample_row, int sample_column) const; // Construct a camera ray originating from the defocus disk and directed at randomly sampled point around the pixel location pixel_row, pixel_column for stratified sample square sample_row, sample_column.
         Raytracing::color ray_color(const shared_ptr<Ray>& sample_ray, int depth, const Raytracing::Scene& scene);
         Raytracing::color sky_blend(const shared_ptr<Ray>& r) const;

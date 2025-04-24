@@ -34,7 +34,7 @@ bvh_node::bvh_node(vector<shared_ptr<Hittable>>& objects, size_t start, size_t e
     // Build the bounding box of the span of source objects.
     bbox = make_shared<AABB>(AABB::empty());
     for (size_t object_index = start; object_index < end; object_index++)
-        bbox = make_shared<AABB>(bbox, objects[object_index]->bounding_box());
+        bbox = make_shared<AABB>(*bbox, *objects[object_index]->bounding_box());
 
     int axis = bbox->longest_axis();
 
@@ -97,13 +97,13 @@ bvh_node::bvh_node(vector<shared_ptr<Hittable>>& objects, size_t start, size_t e
 
 bool bvh_node::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<hit_record>& rec) const
 {
-    auto local_ray = transformed ? transform_ray(r) : r;
+    const auto local_ray = transformed ? transform_ray(r) : r;
 
     if (!bbox->hit(local_ray, ray_t))
         return false;
 
-    bool hit_left = left->hit(local_ray, ray_t, rec);
-    bool hit_right = right->hit(local_ray, Interval(ray_t.min, hit_left ? rec->t : ray_t.max), rec);
+    const bool hit_left = left->hit(local_ray, ray_t, rec);
+    const bool hit_right = right->hit(local_ray, Interval(ray_t.min, hit_left ? rec->t : ray_t.max), rec);
 
     if (transformed && (hit_left || hit_right))
         transform_hit_record(rec);

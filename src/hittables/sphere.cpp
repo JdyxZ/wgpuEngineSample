@@ -46,7 +46,7 @@ Sphere::Sphere(point3 start_center, point3 end_center, const double radius, cons
 
 bool Sphere::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<hit_record>& rec) const
 {
-    auto local_ray = transformed ? transform_ray(r) : r;
+    const auto local_ray = transformed ? transform_ray(r) : r;
 
     point3 current_center = center.at(local_ray->time());
 

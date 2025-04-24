@@ -37,8 +37,8 @@ int RayTracingRenderer::post_initialize()
 {
     Renderer::post_initialize();
 
+    // Init frame vars
     init_frame_windows();
-    std::cout << std::endl;
 
     // Scene start
     scene.start();
@@ -55,20 +55,20 @@ int RayTracingRenderer::post_initialize()
     // Initialize the camera
     camera.initialize(scene, image);
 
-    // Render scene
-    camera.render(scene, image);
+    //// Render scene
+    //camera.render(scene, image);
 
-    // Update framebuffer
-    screen_texture->update(image.get_data().data(), 0, {});
+    //// Update framebuffer
+    //screen_texture->update(image.get_rgba_data().data(), 0, {});
 
-    // Encode and save image with desired format
-    image.save();
+    //// Encode and save image with desired format
+    //image.save();
 
-    // Scene end
-    scene.end();
+    //// Scene end
+    //scene.end();
 
-    // Write scene log
-    log.write(scene, camera, image);
+    //// Write scene log
+    //log.write(scene, camera, image);
 
     return 0;
 }
@@ -85,7 +85,8 @@ void RayTracingRenderer::update(float delta_time)
 
 void RayTracingRenderer::render()
 {
-    screen_mesh->render();
+    // Render generated image to screen
+    // screen_mesh->render();
 
     Renderer::render();
 }
@@ -94,23 +95,21 @@ void RayTracingRenderer::resize_window(int width, int height)
 {
     Renderer::resize_window(width, height);
 
-    camera_2d->set_view(glm::mat4x4(1.0f));
-    camera_2d->set_projection(glm::mat4x4(1.0f));
+    //camera_2d->set_view(glm::mat4x4(1.0f));
+    //camera_2d->set_projection(glm::mat4x4(1.0f));
 
-    // To recreate on resize
-    {
-        screen_texture->create(WGPUTextureDimension_2D, WGPUTextureFormat_RGBA8UnormSrgb, { webgpu_context->screen_width, webgpu_context->screen_height, 1 }, WGPUTextureUsage_CopyDst | WGPUTextureUsage_TextureBinding, 1, 1, nullptr);
-        screen_mesh->get_surface_material(0)->set_dirty_flag(PROP_DIFFUSE_TEXTURE);
+    //screen_texture->create(WGPUTextureDimension_2D, WGPUTextureFormat_RGBA8UnormSrgb, { webgpu_context->screen_width, webgpu_context->screen_height, 1 }, WGPUTextureUsage_CopyDst | WGPUTextureUsage_TextureBinding, 1, 1, nullptr);
+    //screen_mesh->get_surface_material(0)->set_dirty_flag(PROP_DIFFUSE_TEXTURE);
 
-        image = ImageWriter(webgpu_context->screen_width, webgpu_context->screen_height);
-        image.initialize();
+    //image = ImageWriter(webgpu_context->screen_width, webgpu_context->screen_height);
+    //image.initialize();
 
-        camera.initialize(scene, image);
-        camera.render(scene, image);
+    //camera.initialize(scene, image);
+    //camera.render(scene, image);
 
-        screen_texture->update(image.get_data().data(), 0, {});
-        image.save();
-    }
+    //screen_texture->update(image.get_rgba_data().data(), 0, {});
+    //image.save();
+
 }
 
 void RayTracingRenderer::init_frame_windows()
@@ -138,4 +137,7 @@ void RayTracingRenderer::init_frame_windows()
     screen_material->set_diffuse_texture(screen_texture);
     screen_material->set_shader(RendererStorage::get_shader_from_source(shaders::mesh_forward::source, shaders::mesh_forward::path, shaders::mesh_forward::libraries, screen_material));
     screen_surface->set_material(screen_material);
+
+    // Log space
+    std::cout << std::endl;
 }

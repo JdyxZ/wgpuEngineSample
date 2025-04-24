@@ -36,7 +36,7 @@ Triangle::Triangle(vertex A, vertex B, vertex C, const shared_ptr<Material>& mat
 bool Triangle::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<hit_record>& rec) const
 {
     // Transform ray into local object space
-    auto local_ray = transformed ? transform_ray(r) : r;
+    const auto local_ray = transformed ? transform_ray(r) : r;
     
     // Calculate P vector and determinant
     vec3 P = cross(local_ray->direction(), AC);

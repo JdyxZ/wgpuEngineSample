@@ -24,9 +24,9 @@ bool Raytracing::Surface::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_p
     if (!transformed)
         return triangles->hit(r, ray_t, rec);
 
-    auto local_ray = transform_ray(r);
+    const auto local_ray = transform_ray(r);
 
-    bool hit = triangles->hit(r, ray_t, rec);
+    const bool hit = triangles->hit(r, ray_t, rec);
 
     if (hit)
         transform_hit_record(rec);

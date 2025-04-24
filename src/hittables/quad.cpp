@@ -42,7 +42,7 @@ shared_ptr<AABB> Quad::bounding_box() const
 
 bool Quad::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<hit_record>& rec) const
 {
-    auto local_ray = transformed ? transform_ray(r) : r;
+    const auto local_ray = transformed ? transform_ray(r) : r;
     auto denom = dot(normal, local_ray->direction());
 
     // No hit if the ray is parallel to the plane.
