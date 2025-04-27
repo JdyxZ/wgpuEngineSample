@@ -2,6 +2,7 @@
 
 // Headers
 #include "core/core.hpp"
+#include "graphics/texture.h"
 
 namespace Raytracing
 {
@@ -18,6 +19,7 @@ namespace Raytracing
         ImageReader(const char* image_filename);
 
         ImageReader();
+        ImageReader(const sTextureData& tex_data);
         ~ImageReader();
 
         int width()  const;
@@ -29,14 +31,14 @@ namespace Raytracing
         // contiguous, going left to right for the width of the image, followed by the next row
         // below, for the full height of the image.
         bool load(const string& filename);
-        const unsigned char* pixel_data(int x, int y) const;
+        const uint8_t* pixel_data(int x, int y) const;
 
     private:
-        const int       bytes_per_pixel = 3;
-        float* fdata = nullptr;         // Linear floating point pixel data
-        unsigned char* bdata = nullptr;         // Linear 8-bit pixel data
-        int             image_width = 0;         // Loaded image width
-        int             image_height = 0;        // Loaded image height
+        int             bytes_per_pixel;
+        float*          fdata = nullptr;            // Linear floating point pixel data
+        uint8_t*        bdata = nullptr;            // Linear 8-bit pixel data
+        int             image_width = 0;            // Loaded image width
+        int             image_height = 0;           // Loaded image height
         int             bytes_per_scanline = 0;
 
         static int clamp(int x, int low, int high); // Return the value clamped to the range [low, high).

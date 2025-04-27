@@ -80,6 +80,17 @@ void Hittable::scale(const vec3& scaling)
     transformed = true;
 }
 
+shared_ptr<Raytracing::Matrix44> Hittable::get_model() const
+{
+    return model;
+}
+
+void Hittable::set_model(const shared_ptr<Raytracing::Matrix44>& model)
+{
+    this->model = model;
+    transformed = true;
+}
+
 const shared_ptr<Ray> Hittable::transform_ray(const shared_ptr<Ray>& r) const
 {
     // Transform ray into object space

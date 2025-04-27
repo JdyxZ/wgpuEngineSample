@@ -12,8 +12,8 @@
 using Raytracing::Surface;
 using Raytracing::AABB;
 
-Raytracing::Mesh::Mesh(const string& name, const shared_ptr<hittable_list>& surfaces, const vector<string>& material_names, const vector<string>& texture_names)
-	: _name(name), _material_names(material_names), _texture_names(texture_names)
+Raytracing::Mesh::Mesh(const string& name, const shared_ptr<hittable_list>& surfaces, const shared_ptr<Raytracing::Matrix44>& model)
+	: _name(name)
 {
 	type = MESH;
 
@@ -21,6 +21,8 @@ Raytracing::Mesh::Mesh(const string& name, const shared_ptr<hittable_list>& surf
 	this->surfaces = make_shared<bvh_node>(*surfaces);
 	bbox = this->surfaces->bounding_box();
     surface_list = surfaces;
+
+    set_model(model ? model : Hittable::model);
 }
 
 bool Raytracing::Mesh::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<hit_record>& rec) const
@@ -51,16 +53,6 @@ const string& Raytracing::Mesh::name() const
 const int& Raytracing::Mesh::num_surfaces() const
 { 
 	return _num_surfaces; 
-}
-
-const vector<string>& Raytracing::Mesh::material_names() const
-{ 
-	return _material_names; 
-}
-
-const vector<string>& Raytracing::Mesh::texture_names() const
-{ 
-	return _texture_names; 
 }
 
 shared_ptr<bvh_stats> Raytracing::Mesh::stats() const

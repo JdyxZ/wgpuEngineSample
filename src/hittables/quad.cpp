@@ -15,8 +15,8 @@ using Raytracing::infinity;
 Quad::Quad(point3 Q, vec3 u, vec3 v, const shared_ptr<Material>& material, const shared_ptr<Matrix44>& model, bool pdf) : Q(Q), u(u), v(v), material(material)
 {
     type = QUAD;
-    this->model = model ? model : Hittable::model;
     this->pdf = pdf;
+    set_model(model ? model : Hittable::model);
 
     auto n = cross(u, v);
     normal = unit_vector(n);

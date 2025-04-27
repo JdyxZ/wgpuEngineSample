@@ -25,6 +25,8 @@ private:
 
     void init_frame_windows();
 
+    void generate_frame(vector<Raytracing::Mesh> meshes);
+
 public:
 
     RayTracingRenderer(const sRendererConfiguration& config = {});

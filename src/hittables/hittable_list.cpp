@@ -27,6 +27,11 @@ size_t hittable_list::size() const
     return objects.size();
 }
 
+void hittable_list::reserve(size_t size)
+{
+    objects.reserve(size);
+}
+
 bool hittable_list::intersect(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<hit_record>& rec) const
 {
     shared_ptr<hit_record> temp_rec = make_shared<hit_record>();

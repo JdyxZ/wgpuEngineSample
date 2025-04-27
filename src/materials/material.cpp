@@ -8,7 +8,6 @@
 #include "utils/utilities.hpp"
 
 // Usings
-using Raytracing::Texture;
 using Raytracing::color;
 
 // ****** Material Class ****** //
@@ -40,7 +39,7 @@ Raytracing::Lambertian::Lambertian(const color& albedo) : texture(make_shared<So
     type = LAMBERTIAN; 
 }
 
-Raytracing::Lambertian::Lambertian(shared_ptr<Texture> texture) : texture(texture)
+Raytracing::Lambertian::Lambertian(shared_ptr<Raytracing::Texture> texture) : texture(texture)
 { 
     type = LAMBERTIAN; 
 }
@@ -69,7 +68,7 @@ Raytracing::Isotropic::Isotropic(const color& albedo) : texture(make_shared<Soli
     type = ISOTROPIC;
 }
 
-Raytracing::Isotropic::Isotropic(shared_ptr<Texture> texture) : texture(texture)
+Raytracing::Isotropic::Isotropic(shared_ptr<Raytracing::Texture> texture) : texture(texture)
 {
     type = ISOTROPIC;
 }
@@ -176,7 +175,7 @@ double Raytracing::Dielectric::reflectance(double cosine, double refraction_inde
 
 // ****** DiffuseLight Class ****** //
 
-Raytracing::DiffuseLight::DiffuseLight(shared_ptr<Texture> texture) : texture(texture)
+Raytracing::DiffuseLight::DiffuseLight(shared_ptr<Raytracing::Texture> texture) : texture(texture)
 { 
     type = DIFFUSE_LIGHT; 
 }

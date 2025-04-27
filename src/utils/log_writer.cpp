@@ -12,7 +12,7 @@
 #include "image_writer.hpp"
 #include "graphics/camera.hpp"
 #include "hittables/mesh.hpp"
-#include "scene_stats.hpp"
+#include "utils/scene_stats.hpp"
 
 // Usings
 using Raytracing::Scene;
@@ -92,7 +92,6 @@ void LogWriter::write(const Scene& scene, const Camera& camera, ImageWriter& ima
         log << "· `" << mesh->name() << "`:\n";
         log << "    - **Total Triangles:** " << mesh_bvh_stats->triangles << "  \n";
         log << "    - **Surfaces:** " << mesh->num_surfaces() << "  \n";
-        log << "    - **Textures:** " << to_list(mesh->texture_names()) << "  \n";
         log << "    - **BVH build time:** " << mesh_bvh_stats->bvh_chrono->elapsed_to_string() << " \n";
     }
     log << "\n";

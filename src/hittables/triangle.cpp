@@ -17,7 +17,7 @@ Triangle::Triangle(vertex A, vertex B, vertex C, const shared_ptr<Material>& mat
     : A(A), B(B), C(C), material(material)
 {
     type = TRIANGLE;
-    this->model = model ? model : Hittable::model;
+    set_model(model ? model : Hittable::model);
 
     AB = B.position - A.position;
     AC = C.position - A.position;

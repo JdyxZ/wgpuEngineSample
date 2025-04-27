@@ -4,6 +4,7 @@
 #include "core/core.hpp"
 #include "vec3.hpp"
 #include "vec4.hpp"
+#include "glm/mat4x4.hpp"
 
 namespace Raytracing
 {
@@ -63,6 +64,7 @@ namespace Raytracing
     public:
         Matrix44(double initial = 0.0);
         Matrix44(const Matrix& m); // Conversion constructor
+        Matrix44(const glm::mat4x4& m);
         Matrix44
         (
             double m00, double m01, double m02, double m03,

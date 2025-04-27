@@ -6,7 +6,7 @@
 #include "hittables/hittable.hpp"
 #include "graphics/camera.hpp"
 #include "utils/image_writer.hpp"
-#include "scene_stats.hpp"
+#include "utils/scene_stats.hpp"
 #include "scenes.hpp"
 #include "hittables/bvh.hpp"
 

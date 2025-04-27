@@ -3,7 +3,7 @@
 // Headers
 #include "core/core.hpp"
 #include "hittables/hittable.hpp"
-#include "scene_stats.hpp"
+#include "utils/scene_stats.hpp"
 
 // Forward declarations
 class hittable_list;

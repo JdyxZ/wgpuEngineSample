@@ -3,7 +3,7 @@
 // Headers
 #include "hittable.hpp"
 #include "math/vec3.hpp"
-#include "scene_stats.hpp"
+#include "utils/scene_stats.hpp"
 
 // Forward declaration
 class bvh_node;

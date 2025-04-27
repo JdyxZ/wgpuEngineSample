@@ -23,6 +23,20 @@ Raytracing::ImageReader::ImageReader(const char* image_filename)
 
 Raytracing::ImageReader::ImageReader() {}
 
+Raytracing::ImageReader::ImageReader(const sTextureData& tex_data)
+{
+    int total_bytes = tex_data.data.size() * sizeof(uint8_t);
+    bdata = new uint8_t[total_bytes];
+
+    memcpy(bdata, tex_data.data.data(), total_bytes);
+
+    image_width = tex_data.image_width;
+    image_height = tex_data.image_height;
+    bytes_per_pixel = tex_data.bytes_per_pixel;
+    bytes_per_scanline = image_width * bytes_per_pixel;
+
+}
+
 Raytracing::ImageReader::~ImageReader()
 {
     delete[] bdata;
@@ -47,6 +61,7 @@ bool Raytracing::ImageReader::load(const std::string& filename)
     // contiguous, going left to right for the width of the image, followed by the next row
     // below, for the full height of the image.
 
+    bytes_per_pixel = 3;
     auto n = bytes_per_pixel; // Dummy out parameter: original components per pixel
     fdata = stbi_loadf(filename.c_str(), &image_width, &image_height, &n, bytes_per_pixel);
 
@@ -58,11 +73,11 @@ bool Raytracing::ImageReader::load(const std::string& filename)
     return true;
 }
 
-const unsigned char* Raytracing::ImageReader::pixel_data(int x, int y) const
+const uint8_t* Raytracing::ImageReader::pixel_data(int x, int y) const
 {
     // Return the address of the three RGB bytes of the pixel at x,y. If there is no image
     // data, returns magenta.
-    static unsigned char magenta[] = { 255, 0, 255 };
+    static uint8_t magenta[] = { 255, 0, 255 };
     if (bdata == nullptr) return magenta;
 
     x = clamp(x, 0, image_width);
@@ -93,7 +108,7 @@ void Raytracing::ImageReader::convert_to_bytes()
     // Convert the linear floating point pixel data to bytes, storing the resulting byte
     // data in the `bdata` member.
     int total_bytes = image_width * image_height * bytes_per_pixel;
-    bdata = new unsigned char[total_bytes];
+    bdata = new uint8_t[total_bytes];
 
     // Iterate through all pixel components, converting from [0.0, 1.0] float values to
     // unsigned [0, 255] byte values.

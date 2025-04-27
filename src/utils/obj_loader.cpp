@@ -50,8 +50,6 @@ shared_ptr<Mesh> load_obj(const string& filename)
 
     // Mesh vars
     shared_ptr<hittable_list> surfaces = make_shared<hittable_list>();
-    vector<string> texture_names;
-    vector<string> material_names;
 
     // Loop over shapes (surfaces)
     for (size_t s = 0; s < shapes.size(); s++)
@@ -82,7 +80,6 @@ shared_ptr<Mesh> load_obj(const string& filename)
                 auto texture_name = materials[material_id].diffuse_texname;
                 auto texture = make_shared<ImageTexture>(obj_path_fs.parent_path().string() + "/" + texture_name);
                 material = make_shared<Lambertian>(texture);
-                texture_names.push_back(texture_name);
             }
         }
 
@@ -158,7 +155,7 @@ shared_ptr<Mesh> load_obj(const string& filename)
     }
 
     // Create mesh
-    auto mesh = make_shared<Mesh>(filename, surfaces, material_names, texture_names);
+    auto mesh = make_shared<Mesh>(filename, surfaces);
 
     return mesh;
 }

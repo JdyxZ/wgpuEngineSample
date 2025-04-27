@@ -3,6 +3,8 @@
 // Headers
 #include "core/core.hpp"
 #include "vec.hpp"
+#include "glm/vec3.hpp"
+#include "glm/vec4.hpp"
 
 // Forward declarations
 class vec4;
@@ -18,6 +20,8 @@ public:
     vec3(double d);
     vec3(double x, double y, double z);
     vec3(const vec4& v);
+    vec3(const glm::vec3& v);
+    vec3(const glm::vec4& v);
 
     // Operator overloads
     vec3 operator-() const;

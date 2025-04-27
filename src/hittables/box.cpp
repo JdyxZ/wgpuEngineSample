@@ -25,9 +25,11 @@ Box::Box(point3 p0, point3 p1, const shared_ptr<Material>& material, const share
 
 	// Define Box 
 	type = BOX;
-	this->model = model ? model : Hittable::model;
 	this->p0 = p0;
 	this->p1 = p1;
+
+    // Set model
+    set_model(model ? model : Hittable::model);
 
 	// Construct the two opposite vertices with the minimum and maximum coordinates.
 	auto min = min_vector(p0, p1);

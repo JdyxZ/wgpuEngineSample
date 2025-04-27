@@ -16,8 +16,8 @@ using Raytracing::pi;
 Sphere::Sphere(point3 static_center, const double radius, const shared_ptr<Material>& material, const shared_ptr<Matrix44>& model, bool pdf) : radius(std::fmax(0, radius)), material(material)
 {
     type = SPHERE;
-    this->model = model ? model : Hittable::model;
     this->pdf = pdf;
+    set_model(model ? model : Hittable::model);
 
     vec3 origin = static_center;
     vec3 direction = vec3(0);
@@ -31,7 +31,7 @@ Sphere::Sphere(point3 static_center, const double radius, const shared_ptr<Mater
 Sphere::Sphere(point3 start_center, point3 end_center, const double radius, const shared_ptr<Material>& material, const shared_ptr<Matrix44>& model) : radius(std::fmax(0, radius)), material(material)
 {
     type = SPHERE;
-    this->model = model ? model : Hittable::model;
+    set_model(model ? model : Hittable::model);
 
     vec3 origin = start_center;
     vec3 direction = end_center - start_center;

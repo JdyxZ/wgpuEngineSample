@@ -89,6 +89,9 @@ public:
     void rotate(const vec3& axis, const double& angle);
     void scale(const vec3& scaling);
 
+    shared_ptr<Raytracing::Matrix44> get_model() const;
+    void set_model(const shared_ptr<Raytracing::Matrix44>& model);
+
 protected:
     PRIMITIVE type = NOT_SPECIFIED;
     shared_ptr<Raytracing::Transform> transform = make_shared<Raytracing::Transform>();

@@ -14,6 +14,10 @@ vec3::vec3(double x, double y, double z) : x(x), y(y), z(z) {}
 
 vec3::vec3(const vec4& v) : x(v.x), y(v.y), z(v.z) {}
 
+vec3::vec3(const glm::vec3& v) : x(v.x), y(v.y), z(v.z) {}
+
+vec3::vec3(const glm::vec4& v) : x(v.x), y(v.y), z(v.z) {}
+
 vec3 vec3::operator-() const
 {
     return vec3(-x, -y, -z);

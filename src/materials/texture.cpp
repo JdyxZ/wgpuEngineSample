@@ -46,6 +46,12 @@ Raytracing::ImageTexture::ImageTexture(string filename)
     image = make_shared<ImageReader>(filename.c_str());
 }
 
+Raytracing::ImageTexture::ImageTexture(const sTextureData& data)
+{
+    image = make_shared<ImageReader>(data);
+
+}
+
 color Raytracing::ImageTexture::value(pair<double, double> texture_coordinates, const point3& p) const
 {
     // Unwrap texture coordinates

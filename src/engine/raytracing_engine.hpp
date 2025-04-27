@@ -13,6 +13,7 @@ public:
     void clean() override;
 	void update(float delta_time) override;
 	void render() override;
+    void render_gui();
 
     static RayTracingEngine* get_sample_instance() { return static_cast<RayTracingEngine*>(instance); }
 

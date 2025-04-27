@@ -39,6 +39,15 @@ Raytracing::Matrix44::Matrix44(const Matrix& matrix) : Matrix(matrix)
     }
 }
 
+Raytracing::Matrix44::Matrix44(const glm::mat4x4& m)
+: Matrix(4, 4) 
+{
+    (*this)[0][0] = m[0][0]; (*this)[0][1] = m[1][0]; (*this)[0][2] = m[2][0]; (*this)[0][3] = m[3][0];
+    (*this)[1][0] = m[0][1]; (*this)[1][1] = m[1][1]; (*this)[1][2] = m[2][1]; (*this)[1][3] = m[3][1];
+    (*this)[2][0] = m[0][2]; (*this)[2][1] = m[1][2]; (*this)[2][2] = m[2][2]; (*this)[2][3] = m[3][2];
+    (*this)[3][0] = m[0][3]; (*this)[3][1] = m[1][3]; (*this)[3][2] = m[2][3]; (*this)[3][3] = m[3][3];
+}
+
 Raytracing::Matrix44::Matrix44
 (
     double m00, double m01, double m02, double m03,

@@ -109,7 +109,6 @@ void RayTracingRenderer::resize_window(int width, int height)
 
     //screen_texture->update(image.get_rgba_data().data(), 0, {});
     //image.save();
-
 }
 
 void RayTracingRenderer::init_frame_windows()
@@ -140,4 +139,37 @@ void RayTracingRenderer::init_frame_windows()
 
     // Log space
     std::cout << std::endl;
+}
+
+void RayTracingRenderer::generate_frame(vector<Raytracing::Mesh> meshes)
+{
+    // Scene start
+    scene.start();
+
+    // Build scene
+    scene.build(camera, image);
+
+    // Create image
+    image = ImageWriter(webgpu_context->screen_width, webgpu_context->screen_height);
+
+    // Intialize image
+    image.initialize();
+
+    // Initialize the camera
+    camera.initialize(scene, image);
+
+    // Render scene
+    camera.render(scene, image);
+
+    // Update framebuffer
+    screen_texture->update(image.get_rgba_data().data(), 0, {});
+
+    // Encode and save image with desired format
+    image.save();
+
+    // Scene end
+    scene.end();
+
+    // Write scene log
+    log.write(scene, camera, image);
 }
