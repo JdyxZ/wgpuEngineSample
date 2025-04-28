@@ -3,6 +3,7 @@
 #include "image_writer.hpp"
 #include "utilities.hpp"
 #include "chrono.hpp"
+#include "graphics/raytracing_renderer.hpp"
 
 // Macros
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -11,6 +12,9 @@
 // External Headers
 #include "external/stb_image_write.hpp"
 
+// Usings
+using Raytracing::RendererSettings;
+
 Raytracing::ImageWriter::ImageWriter() : width(0), height(0), aspect_ratio(0){}
 
 Raytracing::ImageWriter::ImageWriter(int width, int height)
@@ -18,7 +22,7 @@ Raytracing::ImageWriter::ImageWriter(int width, int height)
     this->width = width;
     this->height = height;
     this->aspect_ratio = width / static_cast<double>(height);
-    encoding_chrono = make_shared<Chrono>();
+    this->encoding_chrono = make_shared<Chrono>();
 }
 
 void Raytracing::ImageWriter::initialize()
@@ -35,13 +39,10 @@ void Raytracing::ImageWriter::initialize()
     default:
         format_str = ".error";
         break;
-    }
-
-    // Construct the file name and path
-    string folderPath = output_directory + "\\";
+    }    
 
     // Create directory for images in case it does not already exist
-    fs::create_directories(folderPath);
+    fs::create_directories(output_destination);
 
     // Calculate height given the width
     // height = int(width / aspect_ratio);
@@ -52,6 +53,15 @@ void Raytracing::ImageWriter::initialize()
 
     // Log info
     Logger::info("ImageWriter", "Image frame succesfully initialized.");
+}
+
+void Raytracing::ImageWriter::initialize(RendererSettings& settings)
+{
+    format = settings.format;
+    quality = settings.quality;
+    output_destination = settings.image_path;
+
+    initialize();
 }
 
 void Raytracing::ImageWriter::write_pixel(const int pixel_row, const int pixel_column, const tuple<uint8_t, uint8_t, uint8_t, uint8_t> RGBA_color)
@@ -76,10 +86,10 @@ void Raytracing::ImageWriter::save()
     name = get_current_timestamp();
 
     // Set formatted image name 
-    fmt_name = name + format_str;
+    full_name = name + format_str;
 
     // Set path for image saving
-    image_path = output_path + "\\" + name + format_str;
+    string image_path = output_destination + "\\" + name + format_str;
 
     Logger::info("ImageWriter", "Encoding to image started.");
 
@@ -90,19 +100,19 @@ void Raytracing::ImageWriter::save()
     switch (format)
     {
     case PNG:
-        success = savePNG();
+        success = savePNG(image_path);
         break;
     case JPG:
-        success = saveJPG(quality);
+        success = saveJPG(image_path, quality);
         break;
     }
 
     encoding_chrono->end();
 
     if (success)
-        Logger::info("ImageWriter", "Image successfully written: " + fmt_name);
+        Logger::info("ImageWriter", "Image successfully written: " + full_name);
     else
-        Logger::error("ImageWriter", "Failed to write image: " + fmt_name);
+        Logger::error("ImageWriter", "Failed to write image: " + full_name);
 
     size = make_shared<file_size>(get_file_size(image_path));
 }
@@ -138,17 +148,17 @@ vector<uint8_t> Raytracing::ImageWriter::get_rgba_data()
     return data;
 }
 
-bool Raytracing::ImageWriter::savePNG()
+bool Raytracing::ImageWriter::savePNG(string path)
 {
     int channels = 4; // RGBA
-    int success = stbi_write_png(image_path.c_str(), width, height, channels, data.data(), width * channels);
+    int success = stbi_write_png(path.c_str(), width, height, channels, data.data(), width * channels);
     return success;
 }
 
-bool Raytracing::ImageWriter::saveJPG(int quality)
+bool Raytracing::ImageWriter::saveJPG(string path, int quality)
 {
     int channels = 3; // RGB
     auto data = get_rgb_data();
-    int success = stbi_write_jpg(image_path.c_str(), width, height, channels, data.data(), quality);
+    int success = stbi_write_jpg(path.c_str(), width, height, channels, data.data(), quality);
     return success;
 }

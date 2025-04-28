@@ -56,7 +56,7 @@ Interval Interval::expand(double delta) const
     return Interval(min - padding, max + padding);
 }
 
-// Static members
+// Static attributes
 const Interval Interval::empty = Interval(+infinity, -infinity);
 const Interval Interval::universe = Interval(-infinity, +infinity);
 const Interval Interval::unitary = Interval(0.0, 1.0);

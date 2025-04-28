@@ -85,6 +85,6 @@ LogMessage Logger::new_message(log_message_type type, string& location, string& 
     return message;
 }
 
-// Static members
+// Static attributes
 vector<LogMessage> Logger::_messages;
 

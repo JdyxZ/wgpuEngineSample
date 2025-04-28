@@ -30,11 +30,9 @@ int main()
         return 1;
 
     engine->start_loop();
-
     engine->clean();
 
     delete engine;
-
     delete renderer;
 
     return 0;

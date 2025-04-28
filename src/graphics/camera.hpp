@@ -19,6 +19,22 @@ namespace Raytracing
 
 namespace Raytracing
 {
+    struct CameraData
+    {
+        // Camera settings
+        double vertical_fov = 90;           
+        double defocus_angle = 0;           
+        double focus_distance = 10;    
+
+        // Camera position and orientation
+        point3 lookfrom = point3(0, 0, 0);  
+        point3 lookat = point3(0, 0, -1);  
+        vec3   world_up = vec3(0, 1, 0);
+    };
+}
+
+namespace Raytracing
+{
     class Camera
     {
     public:
@@ -49,6 +65,7 @@ namespace Raytracing
 
         Camera();
 
+        void initialize(CameraData& data, const Scene& scene, ImageWriter& image);
         void initialize(const Raytracing::Scene& scene, ImageWriter& image);
         void render(Raytracing::Scene& scene, ImageWriter& image);
 
@@ -69,7 +86,7 @@ namespace Raytracing
 
         const shared_ptr<Ray> get_ray_sample(int pixel_row, int pixel_column, int sample_row, int sample_column) const; // Construct a camera ray originating from the defocus disk and directed at randomly sampled point around the pixel location pixel_row, pixel_column for stratified sample square sample_row, sample_column.
         Raytracing::color ray_color(const shared_ptr<Ray>& sample_ray, int depth, const Raytracing::Scene& scene);
-        Raytracing::color sky_blend(const shared_ptr<Ray>& r) const;
+        Raytracing::color sky_blend(const Scene& scene, const shared_ptr<Ray>& r) const;
         optional<Raytracing::color> barycentric_color_interpolation(const shared_ptr<triangle_hit_record>& rec, Triangle* t) const;
 
     };

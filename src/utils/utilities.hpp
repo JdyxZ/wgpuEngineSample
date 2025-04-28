@@ -1,9 +1,12 @@
 #pragma once
 
-// Headers
+// Internal Headers
 #include "core/core.hpp"
 #include "math/vec3.hpp"
 #include "math/vec4.hpp"
+
+// External headers
+#include "external/magic_enum.hpp"
 
 // ************** TIMESTAMP UTILITIES ************** //
 
@@ -25,6 +28,21 @@ file_size get_file_size(const string& file_path);
 string to_list(const vector<string>& vec);
 string trim(const string& str);
 string trim_trailing_zeros(const double number, const bool remove_point = true);
+
+// ************** ENUM UTILITIES ************** //
+
+template<typename Enum>
+inline vector<const char*> get_enum_names()
+{
+    static const auto names_vector = magic_enum::enum_names<Enum>();
+    static vector<const char*> names_array;
+    names_array.resize(magic_enum::enum_count<Enum>());
+
+    for (std::size_t i = 0; i < names_vector.size(); ++i)
+        names_array[i] = names_vector[i].data();
+
+    return names_array;
+}
 
 // ************** MATH UTILITIES ************** //
 
@@ -119,7 +137,7 @@ inline vec3 max_vector(const vec3& v1, const vec3& v2)
 
 template <typename T>
 requires std::is_arithmetic_v<T>
-T vector_mean(const vector<T>& data)
+inline T vector_mean(const vector<T>& data)
 {
     if (data.empty())
         return 0.0;
@@ -131,7 +149,7 @@ T vector_mean(const vector<T>& data)
 
 template <typename T>
 requires std::is_arithmetic_v<T>
-T vector_min_value(const vector<T>& data)
+inline T vector_min_value(const vector<T>& data)
 {
     if (data.empty())
         return 0.0;
@@ -142,7 +160,7 @@ T vector_min_value(const vector<T>& data)
 
 template <typename T>
 requires std::is_arithmetic_v<T>
-T vector_max_value(const vector<T>& data)
+inline T vector_max_value(const vector<T>& data)
 {
     if (data.empty())
         return 0.0;
@@ -153,7 +171,7 @@ T vector_max_value(const vector<T>& data)
 
 template <typename T>
 requires std::is_arithmetic_v<T>
-T vector_standard_deviation(const vector<T>& data)
+inline T vector_standard_deviation(const vector<T>& data)
 {
     if (data.empty())
         return 0.0;
@@ -174,7 +192,7 @@ T vector_standard_deviation(const vector<T>& data)
 
 template <typename T>
 requires std::is_arithmetic_v<T>
-T vector_sum(const vector<T>& data)
+inline T vector_sum(const vector<T>& data)
 {
     auto sum = std::accumulate(data.begin(), data.end(), T{ 0 });
     return static_cast<T>(sum);

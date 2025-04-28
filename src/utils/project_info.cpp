@@ -33,7 +33,7 @@ string ProjectInfo::getCompilerInfo()
     return info;
 }
 
-// Static members
+// Static attributes
 const string ProjectInfo::version = "1.0";
 const string ProjectInfo::build_configuration = getBuildConfiguration();
 const string ProjectInfo::compiler = getCompilerInfo();

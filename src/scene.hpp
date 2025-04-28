@@ -14,6 +14,8 @@ namespace Raytracing
 {
     class Camera;
     class ImageWriter;
+    struct RendererSettings;
+    class Mesh;
 }
 
 namespace Raytracing
@@ -26,15 +28,17 @@ namespace Raytracing
         string name;
 
         // Ray scattering settings
-        int bounce_max_depth = 10;          // Maximum number of ray bounces into scene
-        double min_hit_distance = 0.001;    // Greatly solves shadow acne
+        int bounce_max_depth = 10;              // Maximum number of ray bounces into scene
+        double min_hit_distance = 0.001;        // Greatly solves shadow acne
 
         // Antialiasing and noise settings
-        int samples_per_pixel = 10;         // Count of random samples for each pixel
+        int samples_per_pixel = 10;             // Count of random samples for each pixel
 
         // Scene background color
-        bool sky_blend = true;              // Enables a background sky gradient
-        color background = SKY_BLUE;        // Sky gradient primary color
+        bool sky_blend = true;                  // Enables a background sky gradient
+        color background = BLACK;               // Scene background color
+        color background_primary = WHITE;       // Sky gradient primary color
+        color background_secondary = SKY_BLUE;  // Sky gradient secondary color
 
         // Hittable objects with PDF sampling distribution
         vector<shared_ptr<Hittable>> hittables_with_pdf;
@@ -54,11 +58,13 @@ namespace Raytracing
         Scene();
 
         // Methods
+        void initialize(RendererSettings& settings);
         void start();
         void end();
         void add(shared_ptr<Hittable> object) override;
         void clear() override;
         void build(Camera& camera, ImageWriter& image);
+        void build(vector<shared_ptr<Mesh>> meshes);
     };
 }
 

@@ -23,7 +23,7 @@ namespace Raytracing
         virtual color value(pair<double, double> texture_coordinates, const point3& p) const = 0;
     };
 
-    class SolidColor : public Raytracing::Texture
+    class SolidColor : public Texture
     {
     public:
         SolidColor(const color& albedo);
@@ -35,21 +35,21 @@ namespace Raytracing
         color albedo;
     };
 
-    class CheckerTexture : public Raytracing::Texture
+    class CheckerTexture : public Texture
     {
     public:
-        CheckerTexture(double scale, shared_ptr<Raytracing::Texture> even, shared_ptr<Raytracing::Texture> odd);
+        CheckerTexture(double scale, shared_ptr<Texture> even, shared_ptr<Texture> odd);
         CheckerTexture(double scale, const color& c1, const color& c2);
 
         color value(pair<double, double> texture_coordinates, const point3& p) const override;
 
     private:
         double inv_scale;
-        shared_ptr<Raytracing::Texture> even;
-        shared_ptr<Raytracing::Texture> odd;
+        shared_ptr<Texture> even;
+        shared_ptr<Texture> odd;
     };
 
-    class ImageTexture : public Raytracing::Texture
+    class ImageTexture : public Texture
     {
     public:
         ImageTexture(const char* filename);
@@ -62,7 +62,7 @@ namespace Raytracing
         shared_ptr<ImageReader> image;
     };
 
-    class NoiseTexture : public Raytracing::Texture
+    class NoiseTexture : public Texture
     {
     public:
         NoiseTexture(double scale, int depth = 7);

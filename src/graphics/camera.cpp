@@ -12,16 +12,30 @@
 #include "math/interval.hpp"
 #include "materials/material.hpp"
 #include "hittables/triangle.hpp"
+#include "graphics/raytracing_renderer.hpp"
 
 // Usings
 using Raytracing::Scene;
 using Raytracing::ImageWriter;
 using Raytracing::color;
-using Raytracing::infinity;
+using Raytracing::CameraData;
 
 Raytracing::Camera::Camera()
 {
     render_chrono = make_shared<Chrono>();
+}
+
+void Raytracing::Camera::initialize(CameraData& data, const Scene& scene, ImageWriter& image)
+{
+    vertical_fov = data.vertical_fov;
+    defocus_angle = data.defocus_angle;
+    focus_distance = data.focus_distance;
+
+    lookfrom = data.lookfrom;
+    lookat = data.lookat;
+    world_up = data.world_up;
+
+    initialize(scene, image);
 }
 
 void Raytracing::Camera::initialize(const Scene& scene, ImageWriter& image)
@@ -78,7 +92,7 @@ void Raytracing::Camera::render(Scene& scene, ImageWriter& image)
     for (int pixel_row = 0; pixel_row < image.get_height(); pixel_row++)
     {
         // Progress info
-        std::clog << "\rScanlines remaining: " << (image.get_height() - pixel_row) << ' ' << std::flush;
+        RayTracingRenderer::render_progress = pixel_row / (image.get_height() - 1);
 
         for (int pixel_column = 0; pixel_column < image.get_width(); pixel_column++)
         {
@@ -148,13 +162,13 @@ color Raytracing::Camera::ray_color(const shared_ptr<Ray>& sample_ray, int depth
     shared_ptr<hit_record> hrec;
 
     // Define ray intersection interval
-    Interval ray_t(scene.min_hit_distance, infinity);
+    Interval ray_t(scene.min_hit_distance, Raytracing::infinity);
 
     // Background hit  
     if (!scene.intersect(sample_ray, ray_t, hrec))
     {
         background_rays++;
-        return scene.sky_blend ? sky_blend(sample_ray) : scene.background;
+        return scene.sky_blend ? sky_blend(scene, sample_ray) : scene.background;
     }
 
     // Hit object type
@@ -243,17 +257,17 @@ color Raytracing::Camera::ray_color(const shared_ptr<Ray>& sample_ray, int depth
     }
     default: // Unknown hit
         unknwon_rays++;
-        return scene.sky_blend ? sky_blend(sample_ray) : scene.background;
+        return scene.sky_blend ? sky_blend(scene, sample_ray) : scene.background;
     }
 }
 
-color Raytracing::Camera::sky_blend(const shared_ptr<Ray>& r) const
+color Raytracing::Camera::sky_blend(const Scene& scene, const shared_ptr<Ray>& r) const
 {
     vec3 unit_direction = unit_vector(r->direction());
 
     auto a = 0.5 * (unit_direction.y + 1.0);
-    color start_color = WHITE;
-    color end_color = SKY_BLUE;
+    color start_color = scene.background_primary;
+    color end_color = scene.background_secondary;
 
     return lerp(a, start_color, end_color);
 }

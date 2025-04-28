@@ -98,7 +98,7 @@ void LogWriter::write(const Scene& scene, const Camera& camera, ImageWriter& ima
 
     // Image Section
     log << "## Image 🖼️\n\n";
-    log << "**Name:** `" << image.fmt_name << "`  \n";
+    log << "**Name:** `" << image.full_name << "`  \n";
     log << "**Resolution:** " << image.get_width() << "x" << image.get_height() << "  \n";
     log << "**Color precision:** " << image.precision << " bits  \n";
     log << "**File Size:** " << image.size->amount << " " << image.size->unit << "  \n";

@@ -1,5 +1,6 @@
 // Headers
-#include "entity_parser.hpp"
+#include "core/core.hpp"
+#include "project_parsers.hpp"
 #include "hittables/mesh.hpp"
 #include "hittables/surface.hpp"
 #include "math/matrix.hpp"
@@ -9,6 +10,11 @@
 #include "hittables/triangle.hpp"
 #include "hittables/hittable_list.hpp"
 #include "graphics/texture.h"
+#include "graphics/camera.hpp"
+
+// Framework headers
+#include "framework/nodes/mesh_instance_3d.h"
+#include "framework/camera/camera.h"
 
 // Usings
 using Raytracing::Mesh;
@@ -17,6 +23,7 @@ using Raytracing::ImageTexture;
 using Raytracing::Lambertian;
 using Raytracing::color;
 using Raytracing::normal;
+using Raytracing::CameraData;
 
 vector<shared_ptr<Mesh>> parse_nodes(const vector<Node*>& nodes)
 {
@@ -175,4 +182,19 @@ shared_ptr<Raytracing::Surface> parse_surface(Surface* surface)
     auto parsed_surface = make_shared<Raytracing::Surface>(triangles, parsed_material);
 
     return parsed_surface;
+}
+
+CameraData parse_camera_data(Camera* camera)
+{
+    CameraData data;
+
+    data.lookfrom = vec3(camera->get_eye());
+    data.lookat = vec3(camera->get_center());
+    data.world_up = vec3(camera->get_up());
+
+    data.vertical_fov = camera->get_fov();
+    data.defocus_angle = (data.lookat - data.lookfrom).length(); // Perfectly focused
+    data.focus_distance = 0.0; // No blur
+
+    return data;
 }

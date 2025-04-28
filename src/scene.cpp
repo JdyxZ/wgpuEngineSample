@@ -9,16 +9,31 @@
 #include "utils/scene_stats.hpp"
 #include "scenes.hpp"
 #include "hittables/bvh.hpp"
+#include "graphics/raytracing_renderer.hpp"
 
 // Usings
-using Raytracing::Camera;
-using Raytracing::ImageWriter;
+using Raytracing::RendererSettings;
 
 Raytracing::Scene::Scene()
 {
     stats = make_shared<scene_stats>();
     full_pipeline = make_shared<Chrono>();
     build_chrono = make_shared<Chrono>();
+}
+
+void Raytracing::Scene::initialize(RendererSettings& settings)
+{
+    auto bc = settings.background_color;
+    auto cp = settings.primary_blend_color;
+    auto cs = settings.primary_blend_color;
+
+    this->bounce_max_depth = settings.bounce_max_depth;
+    this->min_hit_distance = settings.min_hit_distance;
+    this->samples_per_pixel = settings.samples_per_pixel;
+    this->sky_blend = settings.sky_blend;
+    this->background = color(bc.x, bc.y, bc.z);
+    this->background_primary = color(cp.x, cp.y, cp.z);
+    this->background_secondary = color(cs.x, cs.y, cs.z);
 }
 
 void Raytracing::Scene::start()
@@ -49,7 +64,7 @@ void Raytracing::Scene::clear()
     stats.reset(new scene_stats());
 }
 
-void Raytracing::Scene::build(Camera& camera, ImageWriter& image)
+void Raytracing::Scene::build(Raytracing::Camera& camera, Raytracing::ImageWriter& image)
 {
     // Log info
     Logger::info("MAIN", "Scene build started.");
@@ -93,6 +108,37 @@ void Raytracing::Scene::build(Camera& camera, ImageWriter& image)
     case 10:
         Raytracing::obj_test(*this, camera, image);
         break;
+    }
+
+    // Boost scene render with BVH
+    auto BVH_tree = make_shared<bvh_node>(*this);
+    clear();
+    add(BVH_tree);
+
+    // End scene build time chrono
+    build_chrono->end();
+
+    // Info log
+    Logger::info("Main", "Scene build completed.");
+}
+
+void Raytracing::Scene::build(vector<shared_ptr<Raytracing::Mesh>> meshes)
+{
+    // Log info
+    Logger::info("MAIN", "Scene build started.");
+
+    // Start scene build time chrono
+    this->build_chrono->start();
+
+    // Add meshes to scene
+    for (auto mesh : meshes)
+    {
+        shared_ptr<Hittable> hittable_mesh = std::dynamic_pointer_cast<Hittable>(mesh);
+
+        if (hittable_mesh)
+            this->add(hittable_mesh);
+        else
+            Logger::error("MAIN", "Mesh cannot be cast to Hittable.");
     }
 
     // Boost scene render with BVH

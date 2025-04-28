@@ -129,6 +129,6 @@ int SystemInfo::getActiveThreads()
     return threadCount;
 }
 
-// Static members
+// Static attributes
 const string SystemInfo::platform = getPlatform();
 const int SystemInfo::cpu_threads = getActiveThreads();

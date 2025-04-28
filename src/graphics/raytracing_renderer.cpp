@@ -1,21 +1,26 @@
-// Headers
+// Raytracing Headers
 #include "core/core.hpp"
 #include "raytracing_renderer.hpp"
+#include "scene.hpp"
+#include "graphics/camera.hpp"
+#include "utils/image_writer.hpp"
+#include "utils/log_writer.hpp"
+#include "utils/project_parsers.hpp"
+
+// Framework Headers
+#include "glm/gtx/norm.hpp"
 #include "shaders/mesh_forward.wgsl.gen.h"
 #include "framework/nodes/mesh_instance_3d.h"
 #include "framework/camera/camera_2d.h"
 #include "graphics/renderer_storage.h"
 #include "graphics/texture.h"
 #include "graphics/shader.h"
-#include "glm/gtx/norm.hpp"
-
-#include "scene.hpp"
-#include "graphics/camera.hpp"
-#include "utils/image_writer.hpp"
-#include "utils/log_writer.hpp"
 
 // Usings
+using Raytracing::Scene;
 using Raytracing::ImageWriter;
+using Raytracing::RendererSettings;
+using Raytracing::CameraData;
 
 RayTracingRenderer::RayTracingRenderer(const sRendererConfiguration& config) : Renderer(config) {}
 
@@ -37,39 +42,6 @@ int RayTracingRenderer::post_initialize()
 {
     Renderer::post_initialize();
 
-    // Init frame vars
-    init_frame_windows();
-
-    // Scene start
-    scene.start();
-
-    // Build scene
-    scene.build(camera, image);
-
-    // Create image
-    image = ImageWriter(webgpu_context->screen_width, webgpu_context->screen_height);
-
-    // Intialize image
-    image.initialize();
-
-    // Initialize the camera
-    camera.initialize(scene, image);
-
-    //// Render scene
-    //camera.render(scene, image);
-
-    //// Update framebuffer
-    //screen_texture->update(image.get_rgba_data().data(), 0, {});
-
-    //// Encode and save image with desired format
-    //image.save();
-
-    //// Scene end
-    //scene.end();
-
-    //// Write scene log
-    //log.write(scene, camera, image);
-
     return 0;
 }
 
@@ -85,8 +57,8 @@ void RayTracingRenderer::update(float delta_time)
 
 void RayTracingRenderer::render()
 {
-    // Render generated image to screen
-    // screen_mesh->render();
+    if (manual_scene)
+        screen_mesh->render();
 
     Renderer::render();
 }
@@ -95,24 +67,30 @@ void RayTracingRenderer::resize_window(int width, int height)
 {
     Renderer::resize_window(width, height);
 
-    //camera_2d->set_view(glm::mat4x4(1.0f));
-    //camera_2d->set_projection(glm::mat4x4(1.0f));
+    if (manual_scene)
+    {
+        camera_2d->set_view(glm::mat4x4(1.0f));
+        camera_2d->set_projection(glm::mat4x4(1.0f));
 
-    //screen_texture->create(WGPUTextureDimension_2D, WGPUTextureFormat_RGBA8UnormSrgb, { webgpu_context->screen_width, webgpu_context->screen_height, 1 }, WGPUTextureUsage_CopyDst | WGPUTextureUsage_TextureBinding, 1, 1, nullptr);
-    //screen_mesh->get_surface_material(0)->set_dirty_flag(PROP_DIFFUSE_TEXTURE);
+        screen_texture->create(WGPUTextureDimension_2D, WGPUTextureFormat_RGBA8UnormSrgb, { webgpu_context->screen_width, webgpu_context->screen_height, 1 }, WGPUTextureUsage_CopyDst | WGPUTextureUsage_TextureBinding, 1, 1, nullptr);
+        screen_mesh->get_surface_material(0)->set_dirty_flag(PROP_DIFFUSE_TEXTURE);
 
-    //image = ImageWriter(webgpu_context->screen_width, webgpu_context->screen_height);
-    //image.initialize();
+        image = ImageWriter(webgpu_context->screen_width, webgpu_context->screen_height);
+        image.initialize();
 
-    //camera.initialize(scene, image);
-    //camera.render(scene, image);
+        camera.initialize(scene, image);
+        camera.render(scene, image);
 
-    //screen_texture->update(image.get_rgba_data().data(), 0, {});
-    //image.save();
+        screen_texture->update(image.get_rgba_data().data(), 0, {});
+        image.save();
+    }
 }
 
-void RayTracingRenderer::init_frame_windows()
+void RayTracingRenderer::render_manual_scene()
 {
+    // Set render type
+    manual_scene = true;
+
     // Set 2D camera to generate the frame
     camera_2d->set_view(glm::mat4x4(1.0f));
     camera_2d->set_projection(glm::mat4x4(1.0f));
@@ -139,10 +117,7 @@ void RayTracingRenderer::init_frame_windows()
 
     // Log space
     std::cout << std::endl;
-}
 
-void RayTracingRenderer::generate_frame(vector<Raytracing::Mesh> meshes)
-{
     // Scene start
     scene.start();
 
@@ -173,3 +148,47 @@ void RayTracingRenderer::generate_frame(vector<Raytracing::Mesh> meshes)
     // Write scene log
     log.write(scene, camera, image);
 }
+
+void RayTracingRenderer::render_frame(vector<shared_ptr<Raytracing::Mesh>>& meshes, RendererSettings& settings)
+{
+    // Create scene
+    Scene scene;
+
+    // Create camera
+    Raytracing::Camera camera;
+    Camera* framework_camera = Renderer::instance->get_camera();
+    CameraData camera_data = parse_camera_data(framework_camera);
+
+    // Create image
+    ImageWriter image;
+    WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
+    image = ImageWriter(webgpu_context->screen_width, webgpu_context->screen_height);
+
+    // Init
+    scene.initialize(settings);
+    image.initialize();
+    camera.initialize(scene, image);
+
+    // Scene start
+    scene.start();
+
+    // Build scene
+    scene.build(meshes);
+
+    // Render scene
+    camera.render(scene, image);
+
+    // Encode and save image with desired format
+    image.save();
+
+    // Scene end
+    scene.end();
+
+    // Write scene log
+    LogWriter log;
+    log.write(scene, camera, image);
+}
+
+// Static attributes
+float RayTracingRenderer::render_progress = 0.f;
+string RayTracingRenderer::last_render_image = "";
