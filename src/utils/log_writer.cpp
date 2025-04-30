@@ -51,7 +51,7 @@ void LogWriter::write(const Scene& scene, const Camera& camera, ImageWriter& ima
     log << "**Compiler:** " << ProjectInfo::compiler << "  \n";
     log << "**Start Time:** " << scene._start << "  \n";
     log << "**End Time:** " << scene._end << "  \n";
-    log << "**Elapsed time:** " << scene.full_pipeline->elapsed_to_string() << "\n\n";
+    log << "**Elapsed time:** " << scene.full_pipeline.elapsed_to_string() << "\n\n";
 
     // Camera Section
     log << "## Camera 📷\n\n";
@@ -69,30 +69,30 @@ void LogWriter::write(const Scene& scene, const Camera& camera, ImageWriter& ima
     log << "**Background Color:** " << scene.background << " \n";
     log << "**Samples per Pixel:** " << scene.samples_per_pixel << "  \n";
     log << "**Max Ray Bounces:** " << scene.bounce_max_depth << "  \n";
-    log << "**Build Time:** " << scene.build_chrono->elapsed_to_string() << "\n\n";
+    log << "**Build Time:** " << scene.build_chrono.elapsed_to_string() << "\n\n";
 
     // BVH Section
     log << "## BVH 🍂\n\n";
-    log << "**Depth:** " << scene.stats->bvh_depth << "  \n";
-    log << "**Nodes:** " << scene.stats->bvh_nodes << "  \n";
-    log << "**BVHs Build Time:** " << scene.stats->bvh_chrono->elapsed_to_string() << "\n\n";
+    log << "**Depth:** " << scene.stats.bvh_depth << "  \n";
+    log << "**Nodes:** " << scene.stats.bvh_nodes << "  \n";
+    log << "**BVHs Build Time:** " << scene.stats.bvh_chrono.elapsed_to_string() << "\n\n";
 
     // Primitives
     log << "## Primitives 🔵\n\n";
-    log << "**Spheres:** " << scene.stats->spheres << "  \n";
-    log << "**Quads:** " << scene.stats->quads << "  \n";
-    log << "**Triangles:** " << scene.stats->triangles << "  \n";
-    log << "**Total:** " << scene.stats->primitives << "  \n\n";
+    log << "**Spheres:** " << scene.stats.spheres << "  \n";
+    log << "**Quads:** " << scene.stats.quads << "  \n";
+    log << "**Triangles:** " << scene.stats.triangles << "  \n";
+    log << "**Total:** " << scene.stats.primitives << "  \n\n";
 
     // Meshes
     log << "## Meshes 🔺\n\n";
-    for (auto mesh : scene.stats->meshes)
+    for (auto mesh : scene.stats.meshes)
     {
-        auto mesh_bvh_stats = mesh->stats();
+        auto mesh_bvh_stats = mesh->get_stats();
         log << "· `" << mesh->name() << "`:\n";
-        log << "    - **Total Triangles:** " << mesh_bvh_stats->triangles << "  \n";
+        log << "    - **Total Triangles:** " << mesh_bvh_stats.triangles << "  \n";
         log << "    - **Surfaces:** " << mesh->num_surfaces() << "  \n";
-        log << "    - **BVH build time:** " << mesh_bvh_stats->bvh_chrono->elapsed_to_string() << " \n";
+        log << "    - **BVH build time:** " << mesh_bvh_stats.bvh_chrono.elapsed_to_string() << " \n";
     }
     log << "\n";
 
@@ -101,12 +101,12 @@ void LogWriter::write(const Scene& scene, const Camera& camera, ImageWriter& ima
     log << "**Name:** `" << image.full_name << "`  \n";
     log << "**Resolution:** " << image.get_width() << "x" << image.get_height() << "  \n";
     log << "**Color precision:** " << image.precision << " bits  \n";
-    log << "**File Size:** " << image.size->amount << " " << image.size->unit << "  \n";
-    log << "**Encoding Time:** " << image.encoding_chrono->elapsed_to_string() << " \n\n";
+    log << "**File Size:** " << image.size.amount << " " << image.size.unit << "  \n";
+    log << "**Encoding Time:** " << image.encoding_chrono.elapsed_to_string() << " \n\n";
 
     // Render Benchmark
     log << "## Render Benchmark 🎇\n\n";
-    log << "**Rendering Time:** " << camera.render_chrono->elapsed_to_string() << " \n";
+    log << "**Rendering Time:** " << camera.render_chrono.elapsed_to_string() << " \n";
     log << "**Rays:**\n";
     log << "    - **Primary Rays:** " << camera.primary_rays << "  \n";
     log << "    - **Background Rays:** " << camera.background_rays << "  \n";

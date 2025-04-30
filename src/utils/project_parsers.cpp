@@ -54,16 +54,16 @@ vector<shared_ptr<Mesh>> parse_node(Node* node)
             string name = scene_mesh->get_name();
 
             // Surfaces
-            shared_ptr<hittable_list> surfaces = make_shared<hittable_list>();
+            hittable_list surfaces;
 
             for (auto surface : scene_mesh->get_surfaces())
             {
                 auto new_surface = parse_surface(surface);
-                surfaces->add(new_surface);
+                surfaces.add(new_surface);
             }
 
             // Model Matrix
-            auto model = make_shared<Matrix44>(scene_mesh->get_global_model());
+            auto model = Matrix44(scene_mesh->get_global_model());
 
             // Mesh
             auto new_mesh = make_shared<Mesh>(name, surfaces, model);
@@ -106,7 +106,7 @@ shared_ptr<Raytracing::Surface> parse_surface(Surface* surface)
     }
 
     // Triangles
-    shared_ptr<hittable_list> triangles = make_shared<hittable_list>();
+    hittable_list triangles;
     sSurfaceData& surface_data = surface->get_surface_data();
 
     // Iterate vertices
@@ -114,7 +114,7 @@ shared_ptr<Raytracing::Surface> parse_surface(Surface* surface)
     if (surface_data.indices.empty())
     {
         auto triangle_vertices = vector<vertex>(3);
-        triangles->reserve(surface_data.vertices.size() / 3);
+        triangles.reserve(surface_data.vertices.size() / 3);
 
         for (size_t i = 0; i < surface_data.vertices.size(); i++)
         {
@@ -122,7 +122,7 @@ shared_ptr<Raytracing::Surface> parse_surface(Surface* surface)
             if (i != 0 && i % 3 == 0)
             {
                 auto triangle = make_shared<Triangle>(triangle_vertices[0], triangle_vertices[1], triangle_vertices[2], parsed_material);
-                triangles->add(triangle);
+                triangles.add(triangle);
             }
 
             // Create vertex
@@ -146,7 +146,7 @@ shared_ptr<Raytracing::Surface> parse_surface(Surface* surface)
     else
     {
         auto triangle_vertices = vector<vertex>(3);
-        triangles->reserve(surface_data.vertices.size() / 3);
+        triangles.reserve(surface_data.vertices.size() / 3);
 
         for (size_t i = 0; i < surface_data.indices.size(); i++)
         {
@@ -154,7 +154,7 @@ shared_ptr<Raytracing::Surface> parse_surface(Surface* surface)
             if (i != 0 && i % 3 == 0)
             {
                 auto triangle = make_shared<Triangle>(triangle_vertices[0], triangle_vertices[1], triangle_vertices[2], parsed_material);
-                triangles->add(triangle);
+                triangles.add(triangle);
             }
 
             // Create vertex

@@ -45,8 +45,8 @@ namespace Raytracing
 
     private:
         double inv_scale;
-        shared_ptr<Texture> even;
-        shared_ptr<Texture> odd;
+        const shared_ptr<Texture>& even;
+        const shared_ptr<Texture>& odd;
     };
 
     class ImageTexture : public Texture

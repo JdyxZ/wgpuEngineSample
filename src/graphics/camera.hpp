@@ -1,14 +1,14 @@
 #pragma once
 
 // Headers
-#include "math/vec3.hpp"
 #include "core/core.hpp"
+#include "math/vec3.hpp"
+#include "utils/chrono.hpp"
+#include "hittables/hittable.hpp"
 
 // Forward declarations
-struct Chrono;
 class Ray;
 class Triangle;
-class triangle_hit_record;
 
 // Namespace forward declarations
 namespace Raytracing
@@ -61,7 +61,7 @@ namespace Raytracing
         int unknwon_rays = 0;
         int rays_casted = 0;
         int average_rays_per_second = 0;
-        shared_ptr<Chrono> render_chrono;
+        Chrono render_chrono;
 
         Camera();
 
@@ -84,10 +84,10 @@ namespace Raytracing
         // Auxiliar variables
         vector<unsigned long long> elapsed_nanoseconds;
 
-        const shared_ptr<Ray> get_ray_sample(int pixel_row, int pixel_column, int sample_row, int sample_column) const; // Construct a camera ray originating from the defocus disk and directed at randomly sampled point around the pixel location pixel_row, pixel_column for stratified sample square sample_row, sample_column.
-        Raytracing::color ray_color(const shared_ptr<Ray>& sample_ray, int depth, const Raytracing::Scene& scene);
-        Raytracing::color sky_blend(const Scene& scene, const shared_ptr<Ray>& r) const;
-        optional<Raytracing::color> barycentric_color_interpolation(const shared_ptr<triangle_hit_record>& rec, Triangle* t) const;
+        const Ray get_ray_sample(int pixel_row, int pixel_column, int sample_row, int sample_column) const; // Construct a camera ray originating from the defocus disk and directed at randomly sampled point around the pixel location pixel_row, pixel_column for stratified sample square sample_row, sample_column.
+        Raytracing::color ray_color(const Ray& sample_ray, int depth, const Raytracing::Scene& scene);
+        Raytracing::color sky_blend(const Scene& scene, const Ray& r) const;
+        optional<Raytracing::color> barycentric_color_interpolation(const hit_record& rec, Triangle* t) const;
 
     };
 }

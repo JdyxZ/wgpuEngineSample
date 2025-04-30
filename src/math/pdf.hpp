@@ -2,10 +2,10 @@
 
 // Headers
 #include "core/core.hpp"
-#include "math/vec3.hpp"
+#include "vec3.hpp"
+#include "onb.hpp"
 
 // Forward declarations
-class ONB;
 class Hittable;
 
 class PDF // Probability Distribution Function (PDF)
@@ -35,7 +35,7 @@ public:
     vec3 generate() const override;
 
 private:
-    shared_ptr<ONB> uvw;
+    ONB uvw;
 };
 
 class hittable_pdf : public PDF

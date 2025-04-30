@@ -1,8 +1,6 @@
 // Internal Headers
 #include "core/core.hpp"
 #include "image_writer.hpp"
-#include "utilities.hpp"
-#include "chrono.hpp"
 #include "graphics/raytracing_renderer.hpp"
 
 // Macros
@@ -22,7 +20,7 @@ Raytracing::ImageWriter::ImageWriter(int width, int height)
     this->width = width;
     this->height = height;
     this->aspect_ratio = width / static_cast<double>(height);
-    this->encoding_chrono = make_shared<Chrono>();
+    this->encoding_chrono = Chrono();
 }
 
 void Raytracing::ImageWriter::initialize()
@@ -95,7 +93,7 @@ void Raytracing::ImageWriter::save()
 
     bool success = false;
 
-    encoding_chrono->start();
+    encoding_chrono.start();
 
     switch (format)
     {
@@ -107,14 +105,14 @@ void Raytracing::ImageWriter::save()
         break;
     }
 
-    encoding_chrono->end();
+    encoding_chrono.end();
 
     if (success)
         Logger::info("ImageWriter", "Image successfully written: " + full_name);
     else
         Logger::error("ImageWriter", "Failed to write image: " + full_name);
 
-    size = make_shared<file_size>(get_file_size(image_path));
+    size = file_size(get_file_size(image_path));
 }
 
 int Raytracing::ImageWriter::get_width()

@@ -2,11 +2,9 @@
 #include "core/core.hpp"
 #include "scene.hpp"
 #include "utils/utilities.hpp"
-#include "utils/chrono.hpp"
 #include "hittables/hittable.hpp"
 #include "graphics/camera.hpp"
 #include "utils/image_writer.hpp"
-#include "utils/scene_stats.hpp"
 #include "scenes.hpp"
 #include "hittables/bvh.hpp"
 #include "graphics/raytracing_renderer.hpp"
@@ -16,9 +14,9 @@ using Raytracing::RendererSettings;
 
 Raytracing::Scene::Scene()
 {
-    stats = make_shared<scene_stats>();
-    full_pipeline = make_shared<Chrono>();
-    build_chrono = make_shared<Chrono>();
+    stats = scene_stats();
+    full_pipeline = Chrono();
+    build_chrono = Chrono();
 }
 
 void Raytracing::Scene::initialize(RendererSettings& settings)
@@ -39,13 +37,13 @@ void Raytracing::Scene::initialize(RendererSettings& settings)
 void Raytracing::Scene::start()
 {
     _start = get_current_timestamp("%c");
-    full_pipeline->start();
+    full_pipeline.start();
 }
 
 void Raytracing::Scene::end()
 {
     _end = get_current_timestamp("%c");
-    full_pipeline->end();
+    full_pipeline.end();
 }
 
 void Raytracing::Scene::add(shared_ptr<Hittable> object)
@@ -55,13 +53,13 @@ void Raytracing::Scene::add(shared_ptr<Hittable> object)
     if (object->has_pdf())
         hittables_with_pdf.push_back(object);
 
-    stats->add(object);
+    stats.add(object);
 }
 
 void Raytracing::Scene::clear()
 {
     hittable_list::clear();
-    stats.reset(new scene_stats());
+    stats = scene_stats(); // reset stats
 }
 
 void Raytracing::Scene::build(Raytracing::Camera& camera, Raytracing::ImageWriter& image)
@@ -70,7 +68,7 @@ void Raytracing::Scene::build(Raytracing::Camera& camera, Raytracing::ImageWrite
     Logger::info("MAIN", "Scene build started.");
 
     // Start scene build time chrono
-    this->build_chrono->start();
+    this->build_chrono.start();
 
     // Choose rendering scene
     switch (7)
@@ -116,7 +114,7 @@ void Raytracing::Scene::build(Raytracing::Camera& camera, Raytracing::ImageWrite
     add(BVH_tree);
 
     // End scene build time chrono
-    build_chrono->end();
+    build_chrono.end();
 
     // Info log
     Logger::info("Main", "Scene build completed.");
@@ -128,7 +126,7 @@ void Raytracing::Scene::build(vector<shared_ptr<Raytracing::Mesh>> meshes)
     Logger::info("MAIN", "Scene build started.");
 
     // Start scene build time chrono
-    this->build_chrono->start();
+    this->build_chrono.start();
 
     // Add meshes to scene
     for (auto mesh : meshes)
@@ -147,7 +145,7 @@ void Raytracing::Scene::build(vector<shared_ptr<Raytracing::Mesh>> meshes)
     add(BVH_tree);
 
     // End scene build time chrono
-    build_chrono->end();
+    build_chrono.end();
 
     // Info log
     Logger::info("Main", "Scene build completed.");

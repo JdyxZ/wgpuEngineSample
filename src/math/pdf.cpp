@@ -2,8 +2,7 @@
 #include "core/core.hpp" 
 #include "pdf.hpp"
 #include "utils/utilities.hpp"
-#include "math/vec3.hpp"
-#include "math/onb.hpp"
+#include "vec3.hpp"
 #include "hittables/hittable.hpp"
 
 // Usings
@@ -23,12 +22,12 @@ vec3 uniform_sphere_pdf::generate() const
 
 cosine_hemisphere_pdf::cosine_hemisphere_pdf(const vec3& normal)
 {
-    uvw = make_shared<ONB>(normal);
+    uvw = ONB(normal);
 }
 
 double cosine_hemisphere_pdf::value(const vec3& direction) const
 {
-    auto cosine_theta = dot(uvw->w(), unit_vector(direction));
+    auto cosine_theta = dot(uvw.w(), unit_vector(direction));
     return std::fmax(0, cosine_theta / pi);
 }
 
@@ -42,7 +41,7 @@ vec3 cosine_hemisphere_pdf::generate() const
         // scatter_direction = uvw.w(); 
 
     // Transform the scatter direction to the uvw space
-    scatter_direction = uvw->transform(scatter_direction);
+    scatter_direction = uvw.transform(scatter_direction);
 
     return scatter_direction;
 }

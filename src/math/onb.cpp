@@ -4,6 +4,11 @@
 #include "utils/utilities.hpp"
 #include "core/framework.hpp"
 
+ONB::ONB()
+{
+    ONB(vec3(1.0, 1.0, 1.0));
+}
+
 ONB::ONB(const vec3& n)
 {
     // Assume n is a unit vector!!!

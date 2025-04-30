@@ -4,10 +4,8 @@
 #include "hittables/hittable_list.hpp"
 #include "math/vec3.hpp"
 #include "graphics/color.hpp"
-
-// Forward declarations
-struct Chrono;
-struct scene_stats;
+#include "utils/chrono.hpp"
+#include "utils/scene_stats.hpp"
 
 // Namespace forward declarations
 namespace Raytracing
@@ -44,15 +42,15 @@ namespace Raytracing
         vector<shared_ptr<Hittable>> hittables_with_pdf;
 
         // Stats
-        shared_ptr<scene_stats> stats;
+        scene_stats stats;
 
         // Timestamps
         string _start;
         string _end;
 
         // Chronos
-        shared_ptr<Chrono> full_pipeline;
-        shared_ptr<Chrono> build_chrono;
+        Chrono full_pipeline;
+        Chrono build_chrono;
 
         // Constructors
         Scene();

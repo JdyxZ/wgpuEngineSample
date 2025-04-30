@@ -1,7 +1,6 @@
 // Headers
 #include "core/core.hpp" 
 #include "quad.hpp"
-#include "math/aabb.hpp"
 #include "ray.hpp"
 #include "utils/utilities.hpp"
 #include "math/matrix.hpp"
@@ -12,11 +11,11 @@ using Raytracing::Material;
 using Raytracing::Matrix44;
 using Raytracing::infinity;
 
-Quad::Quad(point3 Q, vec3 u, vec3 v, const shared_ptr<Material>& material, const shared_ptr<Matrix44>& model, bool pdf) : Q(Q), u(u), v(v), material(material)
+Quad::Quad(point3 Q, vec3 u, vec3 v, const shared_ptr<Material>& material, const optional<Matrix44>& model, bool pdf) : Q(Q), u(u), v(v), material(material)
 {
     type = QUAD;
     this->pdf = pdf;
-    set_model(model ? model : Hittable::model);
+    set_model(model);
 
     auto n = cross(u, v);
     normal = unit_vector(n);
@@ -32,32 +31,32 @@ void Quad::set_bounding_box()
     // Compute the bounding box of all four vertices.
     auto bbox_diagonal1 = AABB(Q, Q + u + v);
     auto bbox_diagonal2 = AABB(Q + u, Q + v);
-    bbox = make_shared<AABB>(bbox_diagonal1, bbox_diagonal2);
+    bbox = AABB(bbox_diagonal1, bbox_diagonal2);
 }
 
-shared_ptr<AABB> Quad::bounding_box() const
+AABB Quad::bounding_box() const
 { 
     return bbox; 
 }
 
-bool Quad::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<hit_record>& rec) const
+bool Quad::hit(const Ray& r, Interval ray_t, hit_record& rec) const
 {
-    const auto local_ray = transformed ? transform_ray(r) : r;
-    auto denom = dot(normal, local_ray->direction());
+    const Ray local_ray = transformed ? transform_ray(r) : r;
+    auto denom = dot(normal, local_ray.direction());
 
     // No hit if the ray is parallel to the plane.
     if (std::fabs(denom) < kEpsilon)
         return false;
 
     // Calculate the ray intersection value
-    auto t = (D - dot(normal, local_ray->origin())) / denom;
+    auto t = (D - dot(normal, local_ray.origin())) / denom;
 
     // Return false if the hit point parameter t is outside the ray interval.
     if (!ray_t.contains(t))
         return false;
 
     // Intersection point
-    auto P = local_ray->at(t);
+    auto P = local_ray.at(t);
 
     // Obtain intersection point's planar coordinates of the coordinate frame determined by the plane determined by Q, u and v
     vec3 phit = P - Q; // Intersection point's vector expressed in plane basis coordinates
@@ -69,16 +68,12 @@ bool Quad::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<hit_record>&
         return false;
 
     // Hit record
-    auto quad_rec = make_shared<quad_hit_record>();
-    quad_rec->t = t;
-    quad_rec->p = P;
-    quad_rec->material = material;
-    quad_rec->texture_coordinates = make_pair(alpha, beta);
-    quad_rec->determine_normal_direction(local_ray->direction(), normal);
-    quad_rec->type = type;
-
-    // Polymorphic assignment
-    rec = quad_rec;
+    rec.t = t;
+    rec.p = P;
+    rec.material = material;
+    rec.texture_coordinates = make_pair(alpha, beta);
+    rec.determine_normal_direction(local_ray.direction(), normal);
+    rec.type = type;
 
     if (transformed)
         transform_hit_record(rec);
@@ -88,14 +83,14 @@ bool Quad::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<hit_record>&
 
 double Quad::pdf_value(const point3& hit_point, const vec3& scattering_direction) const
 {
-    shared_ptr<hit_record> rec;
-    auto ray = make_shared<Ray>(hit_point, scattering_direction);
+    hit_record rec;
+    auto ray = Ray(hit_point, scattering_direction);
 
     if (!this->hit(ray, Interval(0.001, infinity), rec))
         return 0;
 
-    auto distance_squared = rec->t * rec->t * scattering_direction.length_squared(); // light_hit_point - origin = t * direction
-    auto cosine = fabs(dot(scattering_direction, rec->normal) / scattering_direction.length()); // scattering direction is not normalized
+    auto distance_squared = rec.t * rec.t * scattering_direction.length_squared(); // light_hit_point - origin = t * direction
+    auto cosine = fabs(dot(scattering_direction, rec.normal) / scattering_direction.length()); // scattering direction is not normalized
 
     return distance_squared / (cosine * area);
 }

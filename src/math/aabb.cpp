@@ -11,38 +11,37 @@ Raytracing::AABB::AABB()
 Raytracing::AABB::AABB(const point3& a, const point3& b)
 {
     // Treat the two points a and b as extrema for the bounding box, so we don't require a particular minimum/maximum coordinate order.
-    x = make_shared<Interval>(std::min(a.x, b.x), std::max(a.x, b.x));
-    y = make_shared<Interval>(std::min(a.y, b.y), std::max(a.y, b.y));
-    z = make_shared<Interval>(std::min(a.z, b.z), std::max(a.z, b.z));
+    x = Interval(std::min(a.x, b.x), std::max(a.x, b.x));
+    y = Interval(std::min(a.y, b.y), std::max(a.y, b.y));
+    z = Interval(std::min(a.z, b.z), std::max(a.z, b.z));
 
     pad_to_minimums();
 }
 
 Raytracing::AABB::AABB(const point3& a, const point3& b, const point3& c)
 {
-    x = make_shared<Interval>(std::min({ a.x, b.x, c.x }), std::max({ a.x, b.x, c.x }));
-    y = make_shared<Interval>(std::min({ a.y, b.y, c.y }), std::max({ a.y, b.y, c.y }));
-    z = make_shared<Interval>(std::min({ a.z, b.z, c.z }), std::max({ a.z, b.z, c.z }));
+    x = Interval(std::min({ a.x, b.x, c.x }), std::max({ a.x, b.x, c.x }));
+    y = Interval(std::min({ a.y, b.y, c.y }), std::max({ a.y, b.y, c.y }));
+    z = Interval(std::min({ a.z, b.z, c.z }), std::max({ a.z, b.z, c.z }));
 
     pad_to_minimums();
 }
 
-
 Raytracing::AABB::AABB(const AABB& box0, const AABB& box1)
 {
     // The interval contructor method automatically orders the interval values
-    x = make_shared<Interval>(*box0.x, *box1.x);
-    y = make_shared<Interval>(*box0.y, *box1.y);
-    z = make_shared<Interval>(*box0.z, *box1.z);
+    x = Interval(box0.x, box1.x);
+    y = Interval(box0.y, box1.y);
+    z = Interval(box0.z, box1.z);
 
     pad_to_minimums();
 }
 
 Raytracing::AABB::AABB(const Interval& x, const Interval& y, const Interval& z)
 {
-    this->x = make_shared<Interval>(x);
-    this->y = make_shared<Interval>(y);
-    this->z = make_shared<Interval>(z);
+    this->x = Interval(x);
+    this->y = Interval(y);
+    this->z = Interval(z);
 
     pad_to_minimums();
 }
@@ -59,7 +58,7 @@ const Raytracing::AABB& Raytracing::AABB::universe()
     return instance;
 }
 
-const shared_ptr<Interval>& Raytracing::AABB::axis_interval(int n) const
+const Interval& Raytracing::AABB::axis_interval(int n) const
 {
     if (n == 1) return y;
     if (n == 2) return z;
@@ -68,26 +67,26 @@ const shared_ptr<Interval>& Raytracing::AABB::axis_interval(int n) const
 
 int Raytracing::AABB::longest_axis() const
 {
-    if (x->size() > y->size())
-        return x->size() > z->size() ? 0 : 2;
+    if (x.size() > y.size())
+        return x.size() > z.size() ? 0 : 2;
     else
-        return y->size() > z->size() ? 1 : 2;
+        return y.size() > z.size() ? 1 : 2;
 }
 
-bool Raytracing::AABB::hit(const shared_ptr<Ray>& r, Interval ray_t) const
+bool Raytracing::AABB::hit(const Ray& r, Interval ray_t) const
 {
     // ** Slab method ** //
-    const point3& ray_orig = r->origin();
-    const vec3& ray_dir = r->direction();
+    const point3& ray_orig = r.origin();
+    const vec3& ray_dir = r.direction();
 
     for (int axis = 0; axis < 3; axis++)
     {
-        const shared_ptr<Interval>& ax = axis_interval(axis);
+        const Interval& ax = axis_interval(axis);
 
         // Calculate ray intersection with current axis interval extremes
         const double adinv = 1.0 / ray_dir[axis];
-        auto t0 = (ax->min - ray_orig[axis]) * adinv;
-        auto t1 = (ax->max - ray_orig[axis]) * adinv;
+        auto t0 = (ax.min - ray_orig[axis]) * adinv;
+        auto t1 = (ax.max - ray_orig[axis]) * adinv;
 
         if (t0 < t1)
         {
@@ -110,7 +109,7 @@ bool Raytracing::AABB::hit(const shared_ptr<Ray>& r, Interval ray_t) const
 void Raytracing::AABB::pad_to_minimums()
 {
     // Adjust the AABB so that no side is narrower than some delta, padding if necessary.
-    if (x->size() < delta) x = make_shared<Interval>(x->expand(delta));
-    if (y->size() < delta) y = make_shared<Interval>(y->expand(delta));
-    if (z->size() < delta) z = make_shared<Interval>(z->expand(delta));
+    if (x.size() < delta) x = Interval(x.expand(delta));
+    if (y.size() < delta) y = Interval(y.expand(delta));
+    if (z.size() < delta) z = Interval(z.expand(delta));
 }

@@ -58,7 +58,8 @@ void RayTracingEngine::create_scene()
 
     // Parse models
     GltfParser gltf_parser;
-    gltf_parser.parse("models/github_assets/DamagedHelmet/glTF-Binary/DamagedHelmet.glb", scene_nodes, PARSE_GLTF_FILL_SURFACE_DATA);
+    gltf_parser.parse("models/github_assets/Cube/glTF/Cube.gltf", scene_nodes, PARSE_GLTF_FILL_SURFACE_DATA);
+    // gltf_parser.parse("models/github_assets/DamagedHelmet/glTF-Binary/DamagedHelmet.glb", scene_nodes, PARSE_GLTF_FILL_SURFACE_DATA);
     // gltf_parser.parse("models/github_assets/Avocado/glTF-Binary/Avocado.glb", scene_nodes, PARSE_GLTF_FILL_SURFACE_DATA);
     // gltf_parser.parse("models/github_assets/Corset/glTF-Binary/Corset.glb", scene_nodes, PARSE_GLTF_FILL_SURFACE_DATA);
 
@@ -134,7 +135,7 @@ void RayTracingEngine::render_gui()
             ImGui::SameLine();
             ImGui::TextUnformatted(settings.image_path.c_str());
 
-            ImGui::Combo("Format", (int*)&settings.format, image_format_names.data(), image_format_names.size());
+            ImGui::Combo("Format", (int*)&settings.format, image_format_names.data(), int(image_format_names.size()));
 
             if (settings.format == IMAGE_FORMAT::JPG)
             {
@@ -177,7 +178,7 @@ void RayTracingEngine::render_gui()
                 ImGui::ProgressBar(progress, bar_size, percentage);
                 ImGui::PopStyleVar(2); // Pop both styling variables
 
-                RayTracingRenderer::render_progress += 0.0001f;
+                // RayTracingRenderer::render_progress += 0.0001f;
                 if (RayTracingRenderer::render_progress >= 1.0f)
                 {
                     is_raytracer_rendering = false;

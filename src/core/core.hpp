@@ -33,6 +33,7 @@
 
 // C++ std usings
 using std::make_shared;
+using std::make_unique;
 using std::make_pair;
 using std::shared_ptr;
 using std::unique_ptr;

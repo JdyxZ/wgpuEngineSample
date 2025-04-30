@@ -1,9 +1,8 @@
 // Headers 
 #include "core/core.hpp"
 #include "surface.hpp"
-#include "bvh.hpp"
 #include "hittable_list.hpp"
-#include "math/aabb.hpp"
+#include "ray.hpp"
 
 // Usings
 using Raytracing::AABB;
@@ -11,22 +10,22 @@ using Raytracing::Material;
 
 Raytracing::Surface::Surface() {}
 
-Raytracing::Surface::Surface(const shared_ptr<hittable_list>& triangles, const shared_ptr<Material>& material) : material(material)
+Raytracing::Surface::Surface(const hittable_list& triangles, const shared_ptr<Material>& material) : material(material)
 {
     type = SURFACE;
-	_num_triangles = int(triangles->size());
-	this->triangles = make_shared<bvh_node>(*triangles);
-	bbox = this->triangles->bounding_box();
+	_num_triangles = int(triangles.size());
+	this->triangles = bvh_node(triangles);
+	bbox = this->triangles.bounding_box();
 }
 
-bool Raytracing::Surface::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<hit_record>& rec) const
+bool Raytracing::Surface::hit(const Ray& r, Interval ray_t, hit_record& rec) const
 {
     if (!transformed)
-        return triangles->hit(r, ray_t, rec);
+        return triangles.hit(r, ray_t, rec);
 
-    const auto local_ray = transform_ray(r);
+    const Ray local_ray = transform_ray(r);
 
-    const bool hit = triangles->hit(r, ray_t, rec);
+    const bool hit = triangles.hit(r, ray_t, rec);
 
     if (hit)
         transform_hit_record(rec);
@@ -34,14 +33,14 @@ bool Raytracing::Surface::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_p
     return hit;
 }
 
-shared_ptr<AABB> Raytracing::Surface::bounding_box() const
+AABB Raytracing::Surface::bounding_box() const
 {
 	return bbox;
 }
 
-const shared_ptr<bvh_stats> Raytracing::Surface::stats() const
+const bvh_stats Raytracing::Surface::get_stats() const
 {
-	return triangles->get_stats();;
+	return triangles.get_stats();
 }
 
 const int& Raytracing::Surface::num_triangles() const

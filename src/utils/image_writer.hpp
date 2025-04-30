@@ -2,10 +2,8 @@
 
 // Headers
 #include "core/core.hpp"
-
-// Forward declarations
-struct file_size;
-struct Chrono;
+#include "utilities.hpp"
+#include "chrono.hpp"
 
 // Namespace forward declarations
 namespace Raytracing
@@ -32,8 +30,8 @@ namespace Raytracing
         int precision = 8;                          // Bit precision of the output image
         int quality = 100;                          // Only for JPG images
         double aspect_ratio;                        // Ratio of image width over height
-        shared_ptr<file_size> size;                 // Output image file size
-        shared_ptr<Chrono> encoding_chrono;         // Chrono to measure the image encoding time using stb_image_write
+        file_size size;                             // Output image file size
+        Chrono encoding_chrono;                     // Chrono to measure the image encoding time using stb_image_write
 
         ImageWriter();
         ImageWriter(int width, int height);

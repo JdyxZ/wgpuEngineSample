@@ -4,6 +4,7 @@
 #include "core/core.hpp"
 #include "math/vec3.hpp"
 #include "math/matrix.hpp"
+#include "math/transform.hpp"
 
 // Forward declarations
 class Ray;
@@ -14,7 +15,6 @@ namespace Raytracing
 {
     class Material;
     class AABB;
-    struct Transform;
 }
 
 enum PRIMITIVE
@@ -38,6 +38,7 @@ struct barycentric_coordinates
 class hit_record 
 {
 public:
+    // General attributes
     point3 p;
     vec3 normal;
     double t;
@@ -47,29 +48,12 @@ public:
     PRIMITIVE type = NOT_SPECIFIED;
     vector<unsigned long long> elapsed_nanoseconds;
 
+    // Triangle attributes
+    optional<barycentric_coordinates> bc;
+
     virtual ~hit_record() = default; 
 
     void determine_normal_direction(const vec3& ray_direction, const vec3& outward_normal);     // Sets the hit record normal vector direction.
-};
-
-class sphere_hit_record : public hit_record
-{
-public:
-    sphere_hit_record();
-};
-
-class triangle_hit_record : public hit_record
-{
-public:
-	optional<barycentric_coordinates> bc;
-
-    triangle_hit_record();
-};
-
-class quad_hit_record : public hit_record
-{
-public:
-    quad_hit_record();
 };
 
 class Hittable
@@ -78,8 +62,8 @@ public:
     Hittable();
     virtual ~Hittable() = default;
 
-    virtual bool hit(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<hit_record>& rec) const = 0;
-    virtual shared_ptr<Raytracing::AABB> bounding_box() const = 0;
+    virtual bool hit(const Ray& r, Interval ray_t, hit_record& rec) const = 0;
+    virtual Raytracing::AABB bounding_box() const = 0;
     virtual double pdf_value(const point3& hit_point, const vec3& scattering_direction) const;
     virtual vec3 random_scattering_ray(const point3& hit_point) const;
     const PRIMITIVE get_type() const;
@@ -89,19 +73,19 @@ public:
     void rotate(const vec3& axis, const double& angle);
     void scale(const vec3& scaling);
 
-    shared_ptr<Raytracing::Matrix44> get_model() const;
-    void set_model(const shared_ptr<Raytracing::Matrix44>& model);
+    Raytracing::Matrix44 get_model() const;
+    void set_model(const optional<Raytracing::Matrix44>& model);
 
 protected:
     PRIMITIVE type = NOT_SPECIFIED;
-    shared_ptr<Raytracing::Transform> transform = make_shared<Raytracing::Transform>();
-    shared_ptr<Raytracing::Matrix44> model = make_shared<Raytracing::Matrix44>(Raytracing::Matrix::identity(4));
-    shared_ptr<Raytracing::Matrix44> inverse_model = make_shared<Raytracing::Matrix44>(Raytracing::Matrix::identity(4));
+    Raytracing::Transform transform = Raytracing::Transform();
+    Raytracing::Matrix44 model = Raytracing::Matrix44(Raytracing::Matrix::identity(4));
+    Raytracing::Matrix44 inverse_model = Raytracing::Matrix44(Raytracing::Matrix::identity(4));
     bool transformed = false;
     bool pdf = false;
 
-    const shared_ptr<Ray> transform_ray(const shared_ptr<Ray>& r) const;
-    void transform_hit_record(shared_ptr<hit_record>& rec) const;
+    const Ray transform_ray(const Ray& r) const;
+    void transform_hit_record(hit_record& rec) const;
 };
 
 

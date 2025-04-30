@@ -12,7 +12,7 @@ namespace Raytracing
     class AABB
     {
     public:
-        shared_ptr<Interval> x, y, z;
+        Interval x, y, z;
 
         AABB();
         AABB(const point3& a, const point3& b);
@@ -23,9 +23,9 @@ namespace Raytracing
         static const AABB& empty();
         static const AABB& universe();
 
-        const shared_ptr<Interval>& axis_interval(int n) const;
+        const Interval& axis_interval(int n) const;
         int longest_axis() const; // Returns the index of the longest axis of the bounding box.
-        bool hit(const shared_ptr<Ray>& r, Interval ray_t) const;
+        bool hit(const Ray& r, Interval ray_t) const;
 
     private:
         double delta = 0.0001;
@@ -35,7 +35,7 @@ namespace Raytracing
     // Operator overloads
     inline AABB operator+(const AABB& bbox, const vec3& offset)
     {
-        return AABB(*bbox.x + offset.x, *bbox.y + offset.y, *bbox.z + offset.z);
+        return AABB(bbox.x + offset.x, bbox.y + offset.y, bbox.z + offset.z);
     }
 
     inline AABB operator+(const vec3& offset, const AABB& bbox)
@@ -45,7 +45,7 @@ namespace Raytracing
 
     inline AABB operator*(const AABB& bbox, const vec3& offset)
     {
-        return AABB(*bbox.x * offset.x, *bbox.y * offset.y, *bbox.z * offset.z);
+        return AABB(bbox.x * offset.x, bbox.y * offset.y, bbox.z * offset.z);
     }
 
     inline AABB operator*(const vec3& offset, const AABB& bbox)

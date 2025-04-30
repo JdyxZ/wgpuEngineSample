@@ -25,7 +25,7 @@ Raytracing::ImageReader::ImageReader() {}
 
 Raytracing::ImageReader::ImageReader(const sTextureData& tex_data)
 {
-    int total_bytes = tex_data.data.size() * sizeof(uint8_t);
+    int total_bytes = int(tex_data.data.size()) * sizeof(uint8_t);
     bdata = new uint8_t[total_bytes];
 
     memcpy(bdata, tex_data.data.data(), total_bytes);

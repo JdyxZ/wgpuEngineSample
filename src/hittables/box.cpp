@@ -2,19 +2,18 @@
 #include "core/core.hpp"
 #include "box.hpp"
 #include "quad.hpp"
-#include "math/aabb.hpp"
-#include "hittables/bvh.hpp"
 #include "hittable_list.hpp"
 #include "math/interval.hpp"
 #include "math/matrix.hpp"
 #include "utils/utilities.hpp"
+#include "ray.hpp"
 
 // Usings
 using Raytracing::Material;
 using Raytracing::Matrix44;
 using Raytracing::AABB;
 
-Box::Box(point3 p0, point3 p1, const shared_ptr<Material>& material, const shared_ptr<Matrix44>& model) : material (material)
+Box::Box(point3 p0, point3 p1, const shared_ptr<Material>& material, const optional<Matrix44>& model) : material (material)
 {
 	// Validate that p0 and p1 are not aligned in any coordinate (this would define a line or a point instead of a box)
 	if (p0.x == p1.x || p0.y == p1.y || p0.z == p1.z)
@@ -29,7 +28,7 @@ Box::Box(point3 p0, point3 p1, const shared_ptr<Material>& material, const share
 	this->p1 = p1;
 
     // Set model
-    set_model(model ? model : Hittable::model);
+    set_model(model);
 
 	// Construct the two opposite vertices with the minimum and maximum coordinates.
 	auto min = min_vector(p0, p1);
@@ -56,20 +55,20 @@ Box::Box(point3 p0, point3 p1, const shared_ptr<Material>& material, const share
 	sides_list.add(quad4);
 	sides_list.add(quad5);
 	sides_list.add(quad6);
-	sides = make_shared<bvh_node>(sides_list);
+	sides = bvh_node(sides_list);
 
     // Set bvh bounding box as the bounding box of the box
-    bbox = sides->bounding_box();
+    bbox = sides.bounding_box();
 }
 
-bool Box::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<hit_record>& rec) const
+bool Box::hit(const Ray& r, Interval ray_t, hit_record& rec) const
 {
     if (!transformed)
-        return sides->hit(r, ray_t, rec);
+        return sides.hit(r, ray_t, rec);
 
-    const auto local_ray = transform_ray(r);
+    const Ray local_ray = transform_ray(r);
 
-    const bool hit = sides->hit(local_ray, ray_t, rec);
+    const bool hit = sides.hit(local_ray, ray_t, rec);
 
     if (hit)
         transform_hit_record(rec);
@@ -77,12 +76,12 @@ bool Box::hit(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<hit_record>& 
     return hit;
 }
 
-shared_ptr<AABB> Box::bounding_box() const
+AABB Box::bounding_box() const
 {
 	return bbox;
 }
 
-const shared_ptr<bvh_stats> Box::stats() const
+const bvh_stats Box::get_stats() const
 {
-    return sides->get_stats();
+    return sides.get_stats();
 }

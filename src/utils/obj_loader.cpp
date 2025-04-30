@@ -49,7 +49,7 @@ shared_ptr<Mesh> load_obj(const string& filename)
     auto& materials = reader.GetMaterials(); // Materials included in the obj
 
     // Mesh vars
-    shared_ptr<hittable_list> surfaces = make_shared<hittable_list>();
+    hittable_list surfaces;
 
     // Loop over shapes (surfaces)
     for (size_t s = 0; s < shapes.size(); s++)
@@ -57,7 +57,7 @@ shared_ptr<Mesh> load_obj(const string& filename)
         // Create new shape
         shared_ptr<Surface> surface;
         shared_ptr<Material> material;
-        shared_ptr<hittable_list> triangles = make_shared<hittable_list>();
+        hittable_list triangles;
 
         if (!materials.empty())
         {
@@ -141,7 +141,7 @@ shared_ptr<Mesh> load_obj(const string& filename)
 
             // Create and add triangle
             triangle = make_shared<Triangle>(vertices[0], vertices[1], vertices[2], material);
-            triangles->add(triangle);
+            triangles.add(triangle);
 
             index_offset += fv;
 
@@ -151,7 +151,7 @@ shared_ptr<Mesh> load_obj(const string& filename)
 
         // Create and add surface
         surface = make_shared<Surface>(triangles, material);
-        surfaces->add(surface);
+        surfaces.add(surface);
     }
 
     // Create mesh

@@ -6,6 +6,7 @@
 class ONB  // Orthonormal Basis (ONB)
 { 
 public:
+    ONB();
     ONB(const vec3& n);
 
     const vec3& u() const;

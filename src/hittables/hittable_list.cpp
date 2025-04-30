@@ -6,10 +6,9 @@
 
 hittable_list::hittable_list() {}
 
-void hittable_list::add(shared_ptr<hittable_list> list)
+void hittable_list::add(hittable_list list)
 {
-    objects.insert(objects.end(), list->objects.begin(), list->objects.end());
-
+    objects.insert(objects.end(), list.objects.begin(), list.objects.end());
 }
 
 void hittable_list::add(shared_ptr<Hittable> object)
@@ -32,9 +31,9 @@ void hittable_list::reserve(size_t size)
     objects.reserve(size);
 }
 
-bool hittable_list::intersect(const shared_ptr<Ray>& r, Interval ray_t, shared_ptr<hit_record>& rec) const
+bool hittable_list::intersect(const Ray& r, Interval ray_t, hit_record& rec) const
 {
-    shared_ptr<hit_record> temp_rec = make_shared<hit_record>();
+    hit_record temp_rec;
     bool hit_anything = false;
     auto closest_object_so_far = ray_t.max;
 
@@ -43,7 +42,7 @@ bool hittable_list::intersect(const shared_ptr<Ray>& r, Interval ray_t, shared_p
         if (object->hit(r, Interval(ray_t.min, closest_object_so_far), temp_rec))
         {
             hit_anything = true;
-            closest_object_so_far = temp_rec->t;
+            closest_object_so_far = temp_rec.t;
             rec = temp_rec;
         }
     }
