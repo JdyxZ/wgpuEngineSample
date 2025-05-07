@@ -3,8 +3,10 @@
 #include "transform.hpp"
 #include "vec3.hpp"
 
+// Framework headers
+#include "framework/math/transform.h"
+
 // Usings
-using Raytracing::Transform;
 using Raytracing::Matrix44;
 
 Raytracing::Transform::Transform()
@@ -25,9 +27,20 @@ Raytracing::Transform::Transform(const vec3& translation, const Quaternion& rota
 	this->cache_model();
 }
 
-Transform Raytracing::Transform::inverse()
+Raytracing::Transform::Transform(const glm::mat4x4& model)
 {
-	Transform inverse_transform = Transform();
+    ::Transform framework_transform = ::Transform::mat4_to_transform(model);
+
+    vec3 translation = framework_transform.get_position();
+    Quaternion rotation = framework_transform.get_rotation();
+    vec3 scailing = framework_transform.get_scale();
+
+    *this = Transform(translation, rotation, scailing);
+}
+
+Raytracing::Transform Raytracing::Transform::inverse()
+{
+	auto inverse_transform = Raytracing::Transform();
 
 	inverse_transform.set_scaling
 	(
@@ -101,7 +114,66 @@ Matrix44 Raytracing::Transform::get_model()
 
 void Raytracing::Transform::set_model(const Raytracing::Matrix44& model)
 {
-    // TODO
+    // Extract translation
+    vec3 translation = get_translation(model);
+
+    // Extract scaling
+    vec3 scaling = get_scaling(model);
+
+    // Extract rotation
+    Quaternion rotation = get_rotation(model);
+
+    // Set internal values
+    this->translation = translation;
+    this->scaling = scaling;
+    this->rotation = rotation;
+    this->recompute = false; // The model is now in sync
+    this->model = model;
+}
+
+vec3 Raytracing::Transform::get_translation(const Raytracing::Matrix44& model)
+{
+    return vec3(model[0][3], model[1][3], model[2][3]);
+}
+
+Quaternion Raytracing::Transform::get_rotation(const Raytracing::Matrix44& model)
+{
+    // Extract scaled axes
+    vec3 x_axis(model[0][0], model[1][0], model[2][0]);
+    vec3 y_axis(model[0][1], model[1][1], model[2][1]);
+    vec3 z_axis(model[0][2], model[1][2], model[2][2]);
+
+    // Get scaling
+    vec3 scaling = get_scaling(model);
+
+    // Normalize axes to get rotation matrix
+    x_axis /= scaling.x;
+    y_axis /= scaling.y;
+    z_axis /= scaling.z;
+
+    // Convert to Quaternion
+    Matrix33 rot_mat(
+        x_axis.x, y_axis.x, z_axis.x,
+        x_axis.y, y_axis.y, z_axis.y,
+        x_axis.z, y_axis.z, z_axis.z
+    );
+
+    return Quaternion(rot_mat);
+}
+
+vec3 Raytracing::Transform::get_scaling(const Raytracing::Matrix44& model)
+{
+    // Extract scaled axes
+    vec3 x_axis(model[0][0], model[1][0], model[2][0]);
+    vec3 y_axis(model[0][1], model[1][1], model[2][1]);
+    vec3 z_axis(model[0][2], model[1][2], model[2][2]);
+
+    // Extract scaling
+    double sx = x_axis.length();
+    double sy = y_axis.length();
+    double sz = z_axis.length();
+
+    return vec3(sx, sy, sz);
 }
 
 Matrix44 Raytracing::Transform::compute_model()

@@ -42,6 +42,7 @@ public:
     double length_squared() const override;
     vec3& normalize() override;
     bool near_zero() const override; // Return true if the vector is close to zero in all dimensions.
+    bool is_zero() const; // Return true if the vector is zero in all dimensions.
 
     // Static random vector generation
     static vec3 random();

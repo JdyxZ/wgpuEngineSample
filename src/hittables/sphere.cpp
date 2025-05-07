@@ -12,35 +12,35 @@ using Raytracing::Matrix44;
 using Raytracing::infinity;
 using Raytracing::pi;
 
-Sphere::Sphere(point3 static_center, const double radius, const shared_ptr<Material>& material, const optional<Matrix44>& model, bool pdf) : radius(std::fmax(0, radius)), material(material)
+Sphere::Sphere(point3 static_center, const double radius, const shared_ptr<Material>& material, const optional<Matrix44>& model, bool transform_ray, bool pdf) : radius(std::fmax(0, radius)), material(material)
 {
     type = SPHERE;
     this->pdf = pdf;
-    set_model(model);
 
     vec3 origin = static_center;
     vec3 direction = vec3(0);
 
     center = motion_vector(origin, direction);
 
-    vec3 radius_vector = vec3(radius, radius, radius);
-    bbox = AABB(static_center - radius_vector, static_center + radius_vector);
+    if (transform_ray)
+        set_model(model);
+
+    set_bbox(model);
 }
 
-Sphere::Sphere(point3 start_center, point3 end_center, const double radius, const shared_ptr<Material>& material, const optional<Matrix44>& model) : radius(std::fmax(0, radius)), material(material)
+Sphere::Sphere(point3 start_center, point3 end_center, const double radius, const shared_ptr<Material>& material, const optional<Matrix44>& model, bool transform_ray) : radius(std::fmax(0, radius)), material(material)
 {
     type = SPHERE;
-    set_model(model);
 
     vec3 origin = start_center;
     vec3 direction = end_center - start_center;
 
     center = motion_vector(origin, direction);
 
-    vec3 radius_vector = vec3(radius, radius, radius);
-    AABB box1(center.at(0) - radius_vector, center.at(0) + radius_vector);
-    AABB box2(center.at(1) - radius_vector, center.at(1) + radius_vector);
-    bbox = AABB(box1, box2);
+    if (transform_ray)
+        set_model(model);
+
+    set_bbox(model);
 }
 
 bool Sphere::hit(const Ray& r, Interval ray_t, hit_record& rec) const
@@ -88,6 +88,35 @@ bool Sphere::hit(const Ray& r, Interval ray_t, hit_record& rec) const
 AABB Sphere::bounding_box() const
 {
     return bbox;
+}
+
+void Sphere::set_bbox(const optional<Raytracing::Matrix44>& model)
+{
+    point3 c0 = center.at(0);
+    point3 c1 = center.at(1);
+    vec3 rv = vec3(radius, radius, radius);
+
+    AABB box1;
+    AABB box2;
+
+    if (model.has_value())
+    {
+        vec3 scailing = Raytracing::Transform::get_scaling(model.value());
+
+        auto tc0 = model.value() * vec4(c0, 1.0);
+        auto tc1 = model.value() * vec4(c1, 1.0);
+        auto trv = scailing * rv;
+
+        box1 = AABB(tc0 - trv, tc0 + trv);
+        box2 = AABB(tc1 - trv, tc1 + trv);
+    }
+    else
+    {
+        box1 = AABB(c0 - rv, c0 + rv);
+        box2 = AABB(c1 - rv, c1 + rv);
+    }
+
+    bbox = AABB(box1, box2);    
 }
 
 double Sphere::pdf_value(const point3& origin, const vec3& direction) const

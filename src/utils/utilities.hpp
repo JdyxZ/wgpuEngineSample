@@ -46,15 +46,14 @@ inline vector<const char*> get_enum_names()
 
 // ************** MATH UTILITIES ************** //
 
-constexpr double clamp(double value, double min, double max) 
-{
-    if (min > max) std::swap(min, max);
-    return std::max(min, std::min(value, max));
-}
-
 constexpr double degrees_to_radians(double degrees) 
 { 
     return degrees * Raytracing::pi / 180.0; 
+}
+
+constexpr double radians_to_degrees(double radians)
+{
+    return radians * 180.0 / Raytracing::pi;
 }
 
 inline double random_double() // Returns a random real in [0,1).
@@ -75,6 +74,11 @@ inline int random_int(int min, int max) // Returns a random integer in [min,max]
 }
 
 // ************** VECTOR UTILITIES ************** //
+
+inline vec3 normalize(vec3 v)
+{
+    return v.normalize();
+}
 
 inline double dot(const vec3& u, const vec3& v)
 {
@@ -200,7 +204,7 @@ inline T vector_sum(const vector<T>& data)
 
 template <typename T>
 requires std::is_arithmetic_v<T>
-void print_vector_statistics(const string name, const std::vector<T>& data)
+inline void print_vector_statistics(const string name, const std::vector<T>& data)
 {
     std::cout << name << " statistics:" << std::endl
         << "\t" << "Size: " << data.size() << std::endl
@@ -210,6 +214,21 @@ void print_vector_statistics(const string name, const std::vector<T>& data)
         << "\t" << "Mean: " << vector_mean(data) << std::endl
         << "\t" << "Standard Deviation: " << vector_standard_deviation(data) << std::endl
         ;
+}
+
+// ************** INTERVAL UTILITIES ************** //
+enum class BoundType
+{
+    inclusive,
+    exclusive
+};
+
+template <std::totally_ordered T> // Only comparable types
+inline bool is_within(T value, T lower, T upper, BoundType lower_bound, BoundType upper_bound)
+{
+    bool lower_ok = (lower_bound == BoundType::inclusive) ? (value >= lower) : (value > lower);
+    bool upper_ok = (upper_bound == BoundType::inclusive) ? (value <= upper) : (value < upper);
+    return lower_ok && upper_ok;
 }
 
 // ************** SAMPLE UTILITIES ************** //

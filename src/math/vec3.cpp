@@ -144,6 +144,12 @@ bool vec3::near_zero() const
     return (std::fabs(x) < kEpsilon) && (std::fabs(y) < kEpsilon) && (std::fabs(z) < kEpsilon);
 }
 
+bool vec3::is_zero() const
+{
+    return (x == 0) && (y == 0) && (z == 0);
+}
+
+
 vec3 vec3::random()
 {
     return vec3(random_double(), random_double(), random_double());

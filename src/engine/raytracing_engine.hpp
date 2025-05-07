@@ -15,6 +15,7 @@ private:
     bool show_imgui = true;
     bool is_raytracer_rendering = false;
     Raytracing::RendererSettings settings;
+    RayTracingRenderer* renderer = nullptr;
 
 public:
 

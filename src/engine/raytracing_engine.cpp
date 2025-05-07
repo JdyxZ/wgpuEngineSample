@@ -18,6 +18,8 @@ int RayTracingEngine::initialize(Renderer* renderer, sEngineConfiguration config
 
     if (error) return error;
 
+    this->renderer = dynamic_cast<RayTracingRenderer*>(renderer);
+
     return error;
 }
 
@@ -154,7 +156,7 @@ void RayTracingEngine::render_gui()
                 vector<shared_ptr<Raytracing::Mesh>> meshes = parse_nodes(scene_nodes);
 
                 // Generate frame
-                RayTracingRenderer::render_frame(meshes, settings);
+                renderer->render_frame(meshes, settings);
 
                 // Update render status
                 is_raytracer_rendering = true;

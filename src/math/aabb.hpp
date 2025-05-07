@@ -13,10 +13,12 @@ namespace Raytracing
     {
     public:
         Interval x, y, z;
+        static const double delta;
 
         AABB();
         AABB(const point3& a, const point3& b);
         AABB(const point3& a, const point3& b, const point3& c);
+        AABB(const point3& a, const point3& b, const point3& c, const point3& d);
         AABB(const AABB& box0, const AABB& box1);
         AABB(const Interval& x, const Interval& y, const Interval& z);
 
@@ -28,7 +30,6 @@ namespace Raytracing
         bool hit(const Ray& r, Interval ray_t) const;
 
     private:
-        double delta = 0.0001;
         void pad_to_minimums();
     };
 

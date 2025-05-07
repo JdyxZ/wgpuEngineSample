@@ -22,6 +22,9 @@ tuple<uint8_t, uint8_t, uint8_t, uint8_t> compute_color(const color& pixel_color
     g = linear_to_gamma(g);
     b = linear_to_gamma(b);
 
+    // Apply tone mapper (for HDR textures) or final image is HDR 
+
+
     // Translate the [0,1] component values to the byte range [0,255].
     static const Interval intensity(0.000, 0.999);
     uint8_t red_byte = static_cast<uint8_t>(256 * intensity.clamp(r));

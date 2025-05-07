@@ -1,10 +1,22 @@
 // Headers
 #include "core/core.hpp"
 #include "quaternion.hpp"
+#include "matrix.hpp"
+
+// Usings
+using Raytracing::Matrix33;
 
 Quaternion::Quaternion() : w(1), i(0), j(0), k(0) {}
 
 Quaternion::Quaternion(double w, double i, double j, double k) : w(w), i(i), j(j), k(k) {}
+
+Quaternion::Quaternion(const glm::quat& q)
+{
+    this->w = q.w;
+    this->i = q.x;
+    this->j = q.y;
+    this->k = q.z;
+}
 
 Quaternion::Quaternion(const vec3& axis, const double angle)
 {
@@ -21,6 +33,48 @@ Quaternion::Quaternion(const vec3& axis, const double angle)
     i = axis.x * sin_half;
     j = axis.y * sin_half;
     k = axis.z * sin_half;
+}
+
+Quaternion::Quaternion(const Matrix33& m)
+{
+    double trace = m(0, 0) + m(1, 1) + m(2, 2);
+    double qw, qx, qy, qz;
+
+    if (trace > 0.0)
+    {
+        double s = std::sqrt(trace + 1.0) * 2.0; // s = 4 * qw
+        qw = 0.25 * s;
+        qx = (m(2, 1) - m(1, 2)) / s;
+        qy = (m(0, 2) - m(2, 0)) / s;
+        qz = (m(1, 0) - m(0, 1)) / s;
+    }
+    else if ((m(0, 0) > m(1, 1)) && (m(0, 0) > m(2, 2)))
+    {
+        double s = std::sqrt(1.0 + m(0, 0) - m(1, 1) - m(2, 2)) * 2.0;
+        qw = (m(2, 1) - m(1, 2)) / s;
+        qx = 0.25 * s;
+        qy = (m(0, 1) + m(1, 0)) / s;
+        qz = (m(0, 2) + m(2, 0)) / s;
+    }
+    else if (m(1, 1) > m(2, 2))
+    {
+        double s = std::sqrt(1.0 + m(1, 1) - m(0, 0) - m(2, 2)) * 2.0;
+        qw = (m(0, 2) - m(2, 0)) / s;
+        qx = (m(0, 1) + m(1, 0)) / s;
+        qy = 0.25 * s;
+        qz = (m(1, 2) + m(2, 1)) / s;
+    }
+    else
+    {
+        double s = std::sqrt(1.0 + m(2, 2) - m(0, 0) - m(1, 1)) * 2.0;
+        qw = (m(1, 0) - m(0, 1)) / s;
+        qx = (m(0, 2) + m(2, 0)) / s;
+        qy = (m(1, 2) + m(2, 1)) / s;
+        qz = 0.25 * s;
+    }
+
+     *this = Quaternion(qw, qx, qy, qz);
+     this->normalize();
 }
 
 Quaternion Quaternion::identity() 

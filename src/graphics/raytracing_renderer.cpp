@@ -156,18 +156,18 @@ void RayTracingRenderer::render_frame(vector<shared_ptr<Raytracing::Mesh>>& mesh
 
     // Create camera
     Raytracing::Camera camera;
-    Camera* framework_camera = Renderer::instance->get_camera();
+    Camera* framework_camera = Renderer::get_camera();
     CameraData camera_data = parse_camera_data(framework_camera);
 
     // Create image
     ImageWriter image;
-    WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
+    WebGPUContext* webgpu_context = Renderer::get_webgpu_context();
     image = ImageWriter(webgpu_context->screen_width, webgpu_context->screen_height);
 
     // Init
     scene.initialize(settings);
     image.initialize();
-    camera.initialize(scene, image);
+    camera.initialize(camera_data, scene, image);
 
     // Scene start
     scene.start();

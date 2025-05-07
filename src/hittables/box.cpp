@@ -40,12 +40,12 @@ Box::Box(point3 p0, point3 p1, const shared_ptr<Material>& material, const optio
 	auto dz = vec3(0, 0, max.z - min.z);
 
 	// Construct the box from the six quads that make up its sides.
-	auto quad1 = make_shared<Quad>(point3(min.x, min.y, max.z), dx, dy, material); // front
-	auto quad2 = make_shared<Quad>(point3(max.x, min.y, max.z), -dz, dy, material); // right
-	auto quad3 = make_shared<Quad>(point3(max.x, min.y, min.z), -dx, dy, material); // back
-	auto quad4 = make_shared<Quad>(point3(min.x, min.y, min.z), dz, dy, material); // left
-	auto quad5 = make_shared<Quad>(point3(min.x, max.y, max.z), dx, -dz, material); // top
-	auto quad6 = make_shared<Quad>(point3(min.x, min.y, min.z), dx, dz, material); // bottom
+	auto quad1 = make_shared<Quad>(point3(min.x, min.y, max.z), dx, dy, material, model); // front
+	auto quad2 = make_shared<Quad>(point3(max.x, min.y, max.z), -dz, dy, material, model); // right
+	auto quad3 = make_shared<Quad>(point3(max.x, min.y, min.z), -dx, dy, material, model); // back
+	auto quad4 = make_shared<Quad>(point3(min.x, min.y, min.z), dz, dy, material, model); // left
+	auto quad5 = make_shared<Quad>(point3(min.x, max.y, max.z), dx, -dz, material, model); // top
+	auto quad6 = make_shared<Quad>(point3(min.x, min.y, min.z), dx, dz, material, model); // bottom
 
 	// BVH
 	auto sides_list = hittable_list();

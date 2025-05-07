@@ -6,6 +6,7 @@
 #include "ray.hpp"
 #include "hittables/hittable.hpp"
 #include "utils/utilities.hpp"
+#include "utils/project_parsers.hpp"
 
 // Usings
 using Raytracing::color;
@@ -50,8 +51,21 @@ bool Raytracing::Lambertian::scatter(const Ray& incoming_ray, const hit_record& 
     srec.is_specular = false;
     srec.specular_ray = nullopt;
     srec.pdf = make_shared<cosine_hemisphere_pdf>(rec.normal);
-    srec.attenuation = texture->value(rec.texture_coordinates, rec.p);
     srec.scatter_type = REFLECT;
+
+    // Texture coordinates
+    ImageTexture* image_texture = dynamic_cast<ImageTexture*>(texture.get());
+
+    if (image_texture)
+    {
+        optional<pair<double, double>> parsed_texture_uvs = parse_texture_uvs(rec.texture_coordinates, image_texture->get_uv_wrap_modes());
+        srec.attenuation = texture->value(parsed_texture_uvs, rec.p);
+    }
+    else
+    {
+        srec.attenuation = texture->value(rec.texture_coordinates, rec.p);
+    }
+
     return true;
 }
 

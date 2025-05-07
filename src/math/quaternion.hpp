@@ -4,13 +4,29 @@
 #include "vec3.hpp"
 #include "utils/utilities.hpp"
 
+// Framework headers
+#include "glm/gtx/compatibility.hpp"
+
+// Namespace forward declarations
+namespace Raytracing
+{
+    class Matrix33;
+}
+
 struct Quaternion 
 {
     double w, i, j, k;
 
-    Quaternion(); // Default constructor: Identity quaternion
+    // Default constructors
+    Quaternion(); // Returns identity quaternion
     Quaternion(double w, double i, double j, double k);
-    Quaternion(const vec3& axis, const double angle); // Rotation quaternion
+
+    // Parsing constructors
+    Quaternion(const glm::quat& q);
+
+    // Rotation quaternion constructors
+    Quaternion(const vec3& axis, const double angle);
+    Quaternion(const Raytracing::Matrix33& m);
 
     static Quaternion identity();
 

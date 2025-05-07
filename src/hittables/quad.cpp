@@ -11,11 +11,10 @@ using Raytracing::Material;
 using Raytracing::Matrix44;
 using Raytracing::infinity;
 
-Quad::Quad(point3 Q, vec3 u, vec3 v, const shared_ptr<Material>& material, const optional<Matrix44>& model, bool pdf) : Q(Q), u(u), v(v), material(material)
+Quad::Quad(point3 Q, vec3 u, vec3 v, const shared_ptr<Material>& material, const optional<Matrix44>& model, bool transform_ray, bool pdf) : Q(Q), u(u), v(v), material(material)
 {
     type = QUAD;
     this->pdf = pdf;
-    set_model(model);
 
     auto n = cross(u, v);
     normal = unit_vector(n);
@@ -23,20 +22,37 @@ Quad::Quad(point3 Q, vec3 u, vec3 v, const shared_ptr<Material>& material, const
     w = n / dot(n, n);
     area = n.length();
 
-    set_bounding_box();
-}
+    if (transform_ray)
+        set_model(model);
 
-void Quad::set_bounding_box()
-{
-    // Compute the bounding box of all four vertices.
-    auto bbox_diagonal1 = AABB(Q, Q + u + v);
-    auto bbox_diagonal2 = AABB(Q + u, Q + v);
-    bbox = AABB(bbox_diagonal1, bbox_diagonal2);
+    set_bbox(model);
 }
 
 AABB Quad::bounding_box() const
 { 
     return bbox; 
+}
+
+void Quad::set_bbox(const optional<Raytracing::Matrix44>& model)
+{
+    vec3 q0, q1, q2, q3;
+
+    if (model.has_value())
+    {
+        q0 = model.value() * vec4(Q, 1.0);
+        q1 = model.value() * vec4(Q + u, 1.0);
+        q2 = model.value() * vec4(Q + v, 1.0);
+        q3 = model.value() * vec4(Q + u + v, 1.0);
+    }
+    else
+    {
+        q0 = Q;
+        q1 = Q + u;
+        q2 = Q + v;
+        q3 = Q + u + v;
+    }
+
+    bbox = AABB(Q, Q + u, Q + v, Q + u + v);
 }
 
 bool Quad::hit(const Ray& r, Interval ray_t, hit_record& rec) const

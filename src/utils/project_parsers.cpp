@@ -53,20 +53,21 @@ vector<shared_ptr<Mesh>> parse_node(Node* node)
             // Name
             string name = scene_mesh->get_name();
 
+            // Model matrix
+            auto model = Matrix44(scene_mesh->get_global_model());
+
             // Surfaces
             hittable_list surfaces;
 
             for (auto surface : scene_mesh->get_surfaces())
             {
-                auto new_surface = parse_surface(surface);
+                auto new_surface = parse_surface(surface, model);
                 surfaces.add(new_surface);
             }
 
-            // Model Matrix
-            auto model = Matrix44(scene_mesh->get_global_model());
-
             // Mesh
             auto new_mesh = make_shared<Mesh>(name, surfaces, model);
+
             meshes.push_back(new_mesh);
         }
 
@@ -84,18 +85,22 @@ vector<shared_ptr<Mesh>> parse_node(Node* node)
     return meshes;
 }
 
-shared_ptr<Raytracing::Surface> parse_surface(Surface* surface)
+shared_ptr<Raytracing::Surface> parse_surface(Surface* surface, const Raytracing::Matrix44& mesh_model)
 {
     // Material
     shared_ptr<Raytracing::Material> parsed_material;
     Material* material = surface->get_material();
+
+    // Texture
     Texture* diffuse_texture = material->get_diffuse_texture();
 
     // Load diffuse texture
     if (diffuse_texture)
     {
         sTextureData& texture_data = diffuse_texture->get_texture_data();
-        auto texture = make_shared<ImageTexture>(texture_data);
+        pair<WGPUAddressMode, WGPUAddressMode> uv_wrap_modes = make_pair(diffuse_texture->get_wrap_u(), diffuse_texture->get_wrap_v());
+
+        auto texture = make_shared<ImageTexture>(texture_data, uv_wrap_modes);
         parsed_material = make_shared<Lambertian>(texture);
     }
     // If there is no diffuse texture, create one
@@ -110,7 +115,6 @@ shared_ptr<Raytracing::Surface> parse_surface(Surface* surface)
     sSurfaceData& surface_data = surface->get_surface_data();
 
     // Iterate vertices
-
     if (surface_data.indices.empty())
     {
         auto triangle_vertices = vector<vertex>(3);
@@ -118,13 +122,6 @@ shared_ptr<Raytracing::Surface> parse_surface(Surface* surface)
 
         for (size_t i = 0; i < surface_data.vertices.size(); i++)
         {
-            // Create and add triangle
-            if (i != 0 && i % 3 == 0)
-            {
-                auto triangle = make_shared<Triangle>(triangle_vertices[0], triangle_vertices[1], triangle_vertices[2], parsed_material);
-                triangles.add(triangle);
-            }
-
             // Create vertex
             vertex v;
 
@@ -140,41 +137,53 @@ shared_ptr<Raytracing::Surface> parse_surface(Surface* surface)
             // Color
             v.color = !surface_data.colors.empty() ? std::optional<color>(surface_data.colors[i]) : std::nullopt;
 
+			// Store vertex
             triangle_vertices[i % 3] = v;
+
+			// Create and add triangle
+			if ((i + 1) % 3 == 0)
+			{
+				auto triangle = make_shared<Triangle>(triangle_vertices[0], triangle_vertices[1], triangle_vertices[2], parsed_material, mesh_model);
+				triangles.add(triangle);
+			}
         }
     }
+
+    // Iterate indices
     else
     {
         auto triangle_vertices = vector<vertex>(3);
-        triangles.reserve(surface_data.vertices.size() / 3);
+        triangles.reserve(surface_data.indices.size() / 3);
 
         for (size_t i = 0; i < surface_data.indices.size(); i++)
         {
-            // Create and add triangle
-            if (i != 0 && i % 3 == 0)
-            {
-                auto triangle = make_shared<Triangle>(triangle_vertices[0], triangle_vertices[1], triangle_vertices[2], parsed_material);
-                triangles.add(triangle);
-            }
-
             // Create vertex
             vertex v;
 
+			// Get surface index
             size_t surface_index = surface_data.indices[i];
 
             // Position
             v.position = point3(surface_data.vertices[surface_index]);
 
             // Normal
-            v.normal = !surface_data.normals.empty() ? std::optional<normal>(surface_data.normals[surface_index]) : std::nullopt;
+            v.normal = !surface_data.normals.empty() ? optional<normal>(surface_data.normals[surface_index]) : nullopt;
 
             // Texture coordinates
-            v.uv = !surface_data.uvs.empty() ? std::optional<pair<double, double>>(make_pair(surface_data.uvs[surface_index].x, surface_data.uvs[surface_index].y)) : std::nullopt;
+            v.uv = !surface_data.uvs.empty() ? optional<pair<double, double>>(make_pair(surface_data.uvs[surface_index].x, surface_data.uvs[surface_index].y)) : nullopt;
 
             // Color
-            v.color = !surface_data.colors.empty() ? std::optional<color>(surface_data.colors[surface_index]) : std::nullopt;
+            v.color = !surface_data.colors.empty() ? optional<color>(surface_data.colors[surface_index]) : nullopt;
 
+			// Store vertex
             triangle_vertices[i % 3] = v;
+
+			// Create and add triangle
+			if ((i + 1) % 3 == 0)
+			{
+				auto triangle = make_shared<Triangle>(triangle_vertices[0], triangle_vertices[1], triangle_vertices[2], parsed_material, mesh_model);
+				triangles.add(triangle);
+			}
         }
     }
 
@@ -182,6 +191,58 @@ shared_ptr<Raytracing::Surface> parse_surface(Surface* surface)
     auto parsed_surface = make_shared<Raytracing::Surface>(triangles, parsed_material);
 
     return parsed_surface;
+}
+
+optional<pair<double, double>> parse_texture_uvs(const optional<pair<double, double>>& uvs, const pair<WGPUAddressMode, WGPUAddressMode>& uv_wrap_mode)
+{
+	// Check uvs content
+	if (!uvs.has_value())
+		return nullopt;
+
+	// UV
+	double u = uvs.value().first;
+	double v = uvs.value().second;
+
+	// UV modes
+	WGPUAddressMode u_wrap_mode = uv_wrap_mode.first;
+	WGPUAddressMode v_wrap_mode = uv_wrap_mode.second;
+
+	// Parse coordinates
+	double parsed_u = parse_uv(u, u_wrap_mode);
+	double parsed_v = parse_uv(v, v_wrap_mode);
+
+	return make_pair(parsed_u, parsed_v);
+}
+
+double parse_uv(double coord, WGPUAddressMode wrap_mode)
+{
+	double parsed_coord;
+
+	switch (wrap_mode)
+	{
+	case(WGPUAddressMode_Undefined):
+		parsed_coord = coord;
+		break;
+	case(WGPUAddressMode_ClampToEdge):
+		parsed_coord = std::clamp(coord, 0.0, 1.0);
+		break;
+	case(WGPUAddressMode_Repeat):
+		parsed_coord = coord - std::floor(coord);
+		break;
+	case(WGPUAddressMode_MirrorRepeat):
+		double mirrored = std::fabs(coord);
+		int period = static_cast<int>(std::floor(mirrored));
+		double frac = mirrored - period;
+
+		// Flip every other period
+		if (period % 2 == 1)
+			frac = 1.0 - frac;
+
+		parsed_coord = frac;
+		break;
+	}
+
+	return parsed_coord;
 }
 
 CameraData parse_camera_data(Camera* camera)
@@ -192,9 +253,9 @@ CameraData parse_camera_data(Camera* camera)
     data.lookat = vec3(camera->get_center());
     data.world_up = vec3(camera->get_up());
 
-    data.vertical_fov = camera->get_fov();
-    data.defocus_angle = (data.lookat - data.lookfrom).length(); // Perfectly focused
-    data.focus_distance = 0.0; // No blur
+    data.vertical_fov = radians_to_degrees(camera->get_fov());
+    data.focus_distance = (data.lookfrom - data.lookat).length(); // Perfectly focused
+    data.defocus_angle = 0.0; // No blur
 
     return data;
 }

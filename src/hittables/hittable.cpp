@@ -4,6 +4,9 @@
 #include "utils/utilities.hpp"
 #include "ray.hpp"
 
+// Framework headers
+#include "framework/math/transform.h"
+
 // Usings
 using Raytracing::Matrix44;
 
@@ -43,7 +46,7 @@ void Hittable::translate(const vec3& translation)
 {
     transform.set_translation(translation);
     model = transform.get_model();
-    inverse_model = Matrix44(model.inverse());
+    inverse_model = model.inverse();
     transformed = true;
 }
 
@@ -51,7 +54,7 @@ void Hittable::rotate(const vec3& axis, const double& angle)
 {
     transform.set_rotation(axis, angle);
     model = transform.get_model();
-    inverse_model = Matrix44(model.inverse());
+    inverse_model = model.inverse();
     transformed = true;
 }
 
@@ -59,7 +62,7 @@ void Hittable::scale(const vec3& scaling)
 {
     transform.set_scaling(scaling);
     model = transform.get_model();
-    inverse_model = Matrix44(model.inverse());
+    inverse_model = model.inverse();
     transformed = true;
 }
 
@@ -68,13 +71,28 @@ Raytracing::Matrix44 Hittable::get_model() const
     return model;
 }
 
+Raytracing::Transform Hittable::get_transform() const
+{
+    return transform;
+}
+
 void Hittable::set_model(const optional<Raytracing::Matrix44>& model)
 {
     if (!model.has_value())
         return;
 
+    transform.set_model(model.value());
     this->model = model.value();
-    transform.set_model(this->model);
+    inverse_model = this->model.inverse();
+    transformed = true;
+}
+
+void Hittable::set_model(const glm::mat4x4& model)
+{
+    transform = Raytracing::Transform(model);
+    this->model = transform.get_model();
+    inverse_model = this->model.inverse();
+    transformed = true;
 }
 
 const Ray Hittable::transform_ray(const Ray& r) const

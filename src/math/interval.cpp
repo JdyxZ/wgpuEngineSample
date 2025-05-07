@@ -45,9 +45,7 @@ bool Interval::surrounds(double x) const
 
 double Interval::clamp(double x) const
 {
-    if (x < min) return min;
-    if (x > max) return max;
-    return x;
+    return std::clamp(x, min, max);
 }
 
 Interval Interval::expand(double delta) const

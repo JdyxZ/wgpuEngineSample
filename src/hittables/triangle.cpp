@@ -12,11 +12,10 @@ using Raytracing::Material;
 using Raytracing::Matrix44;
 using Raytracing::infinity;
 
-Triangle::Triangle(vertex A, vertex B, vertex C, const shared_ptr<Material>& material, const optional<Matrix44>& model, bool culling)
+Triangle::Triangle(vertex A, vertex B, vertex C, const shared_ptr<Material>& material, const optional<Matrix44>& model, bool transform_ray, bool culling)
     : A(A), B(B), C(C), material(material), culling(culling)
 {
     type = TRIANGLE;
-    set_model(model);
 
     AB = B.position - A.position;
     AC = C.position - A.position;
@@ -26,10 +25,16 @@ Triangle::Triangle(vertex A, vertex B, vertex C, const shared_ptr<Material>& mat
     area = 0.5 * normal_length; // Same reasoning as in the Quad class
     N = normal / normal_length; // Normalized normal
 
-    // if (normal.length() < kEpsilon)
-        // throw std::runtime_error("Triangle vertices are colinear");
+    if (normal.length() < kEpsilon)
+    {
+        string error = Logger::error("TRIANGLE", "Triangle vertices are colinear");
+        throw std::runtime_error(error);
+    }
 
-    bbox = AABB(A.position, B.position, C.position);
+    if (transform_ray)
+        set_model(model);
+
+    set_bbox(model);
 }
 
 bool Triangle::hit(const Ray& r, Interval ray_t, hit_record& rec) const
@@ -81,7 +86,7 @@ bool Triangle::hit(const Ray& r, Interval ray_t, hit_record& rec) const
     rec.texture_coordinates = interpolate_texture_coordinates(u, v, w);
     rec.type = type;
     rec.bc = { u, v, w };
-    rec.determine_normal_direction(local_ray.direction(), N);
+    rec.determine_normal_direction(local_ray.direction(), interpolate_normal(u, v, w));
 
     if (transformed)
         transform_hit_record(rec);
@@ -102,6 +107,14 @@ bool Triangle::has_vertex_normals() const
 AABB Triangle::bounding_box() const
 {
     return bbox;
+}
+
+void Triangle::set_bbox(const optional<Raytracing::Matrix44>& model)
+{
+    if (model.has_value())
+        bbox = AABB(model.value() * vec4(A.position, 1.0), model.value() * vec4(B.position, 1.0), model.value() * vec4(C.position, 1.0));
+    else
+        bbox = AABB(A.position, B.position, C.position);
 }
 
 double Triangle::pdf_value(const point3& hit_point, const vec3& scattering_direction) const
@@ -152,4 +165,23 @@ pair<double, double> Triangle::interpolate_texture_coordinates(double u, double 
     double v_interp = w * vA + u * vB + v * vC;
 
     return { u_interp, v_interp };
+}
+
+vec3 Triangle::interpolate_normal(double u, double v, double w) const
+{
+    if (has_vertex_normals())
+    {
+        vec3 nA = A.normal.value();
+        vec3 nB = B.normal.value();
+        vec3 nC = C.normal.value();
+
+        // Interpolate normals using barycentric coordinates
+        vec3 interpolated_normal = w * nA + u * nB + v * nC;
+        return unit_vector(interpolated_normal); 
+    }
+    else
+    {
+        // Use geometric face normal if no vertex normals
+        return N;
+    }
 }

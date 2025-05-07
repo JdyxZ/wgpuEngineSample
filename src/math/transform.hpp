@@ -16,6 +16,7 @@ namespace Raytracing
     public:
 	    Transform();
 	    Transform(const vec3& translation, const Quaternion& rotation, const vec3& scailing);
+        Transform(const glm::mat4x4& model);
 
 	    Transform inverse();
 
@@ -30,6 +31,10 @@ namespace Raytracing
 	    void cache_model();
 	    Raytracing::Matrix44 get_model();
         void set_model(const Raytracing::Matrix44& model);
+
+        static vec3 get_translation(const Raytracing::Matrix44& model);
+        static Quaternion get_rotation(const Raytracing::Matrix44& model);
+        static vec3 get_scaling(const Raytracing::Matrix44& model);
 
 	     static const Raytracing::Matrix44 transform_matrix(const vec3& translation = vec3(0), vec3 axis = x_axis, const double& angle = 0, const vec3& scailing = vec3(1));
 

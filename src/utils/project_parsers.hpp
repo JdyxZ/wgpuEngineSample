@@ -3,6 +3,9 @@
 // Headers
 #include "core/core.hpp"
 
+// Framework headers
+#include <webgpu/webgpu.h>
+
 // Forward declarations
 class Node;
 class Surface;
@@ -13,13 +16,16 @@ namespace Raytracing
 {
     class Mesh;
     class Surface;
+    class Matrix44;
     struct CameraData;
 }
 
 // Object parsers
 vector<shared_ptr<Raytracing::Mesh>> parse_nodes(const vector<Node*>& nodes);
 vector<shared_ptr<Raytracing::Mesh>> parse_node(Node* node);
-shared_ptr<Raytracing::Surface> parse_surface(Surface* surface);
+shared_ptr<Raytracing::Surface> parse_surface(Surface* surface, const Raytracing::Matrix44& model);
+optional<pair<double, double>> parse_texture_uvs(const optional<pair<double, double>>& uvs, const pair<WGPUAddressMode, WGPUAddressMode>& uv_wrap_mode);
+double parse_uv(double coord, WGPUAddressMode wrap_mode);
 
 // Data parsers
 Raytracing::CameraData parse_camera_data(Camera* camera);

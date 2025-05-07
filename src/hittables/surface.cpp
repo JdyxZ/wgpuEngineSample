@@ -10,12 +10,15 @@ using Raytracing::Material;
 
 Raytracing::Surface::Surface() {}
 
-Raytracing::Surface::Surface(const hittable_list& triangles, const shared_ptr<Material>& material) : material(material)
+Raytracing::Surface::Surface(const hittable_list& triangles, const shared_ptr<Material>& material, const optional<Matrix44>& model) : material(material)
 {
     type = SURFACE;
 	_num_triangles = int(triangles.size());
 	this->triangles = bvh_node(triangles);
+
 	bbox = this->triangles.bounding_box();
+
+    set_model(model);
 }
 
 bool Raytracing::Surface::hit(const Ray& r, Interval ray_t, hit_record& rec) const

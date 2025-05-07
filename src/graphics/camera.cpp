@@ -93,11 +93,9 @@ void Raytracing::Camera::render(Scene& scene, ImageWriter& image)
     uint32_t progress = 0;
 
     // Stratified sample square
+    // #pragma omp parallel for collapse(2)
     for (int pixel_row = 0; pixel_row < image.get_height(); pixel_row++)
     {
-        // Progress info
-        RayTracingRenderer::render_progress = pixel_row / (image.get_height() - 1);
-
         for (int pixel_column = 0; pixel_column < image.get_width(); pixel_column++)
         {
             // Final pixel color
@@ -124,7 +122,16 @@ void Raytracing::Camera::render(Scene& scene, ImageWriter& image)
 
             // Save pixel color into image buffer (row-major order)
             image.write_pixel(pixel_row, pixel_column, RGBA_color);
+
+            // Update progress
+            // #pragma omp atomic
+                progress++;
         }
+
+        // Progress info
+        // if(omp_get_num_threads() == 1)
+            std::clog << "\rProgress: " << std::fixed << std::setprecision(2) << 100 * (progress / float(image.get_height() * image.get_width())) << ' ' << std::flush;
+        // RayTracingRenderer::render_progress = pixel_row / float(image.get_height() - 1);
     }
 
     // End render chrono

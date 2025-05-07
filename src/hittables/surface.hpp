@@ -15,7 +15,7 @@ namespace Raytracing
     {
     public:
 	    Surface();
-	    Surface(const hittable_list& triangles, const shared_ptr<Material>& material);
+	    Surface(const hittable_list& triangles, const shared_ptr<Material>& material, const optional<Matrix44>& model = nullopt);
 
 	    bool hit(const Ray& r, Interval ray_t, hit_record& rec) const override;
 	    AABB bounding_box() const override;

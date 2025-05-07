@@ -27,6 +27,15 @@ Raytracing::AABB::AABB(const point3& a, const point3& b, const point3& c)
     pad_to_minimums();
 }
 
+Raytracing::AABB::AABB(const point3& a, const point3& b, const point3& c, const point3& d)
+{
+    x = Interval(std::min({ a.x, b.x, c.x, d.x }), std::max({ a.x, b.x, c.x, d.x }));
+    y = Interval(std::min({ a.y, b.y, c.y, d.y }), std::max({ a.y, b.y, c.y, d.y }));
+    z = Interval(std::min({ a.z, b.z, c.z, d.z }), std::max({ a.z, b.z, c.z, d.z }));
+
+    pad_to_minimums();
+}
+
 Raytracing::AABB::AABB(const AABB& box0, const AABB& box1)
 {
     // The interval contructor method automatically orders the interval values
@@ -113,3 +122,6 @@ void Raytracing::AABB::pad_to_minimums()
     if (y.size() < delta) y = Interval(y.expand(delta));
     if (z.size() < delta) z = Interval(z.expand(delta));
 }
+
+// Static members
+const double Raytracing::AABB::delta = 0.0001;

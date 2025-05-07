@@ -3,6 +3,8 @@
 // Headers
 #include "math/vec3.hpp"
 #include "core/core.hpp"
+
+// Framework headers
 #include "graphics/texture.h"
 
 // Forward declarations
@@ -20,7 +22,7 @@ namespace Raytracing
     {
     public:
         virtual ~Texture() = default;
-        virtual color value(pair<double, double> texture_coordinates, const point3& p) const = 0;
+        virtual color value(optional<pair<double, double>> texture_coordinates, const point3& p) const = 0;
     };
 
     class SolidColor : public Texture
@@ -29,7 +31,7 @@ namespace Raytracing
         SolidColor(const color& albedo);
         SolidColor(double red, double green, double blue);
 
-        color value(pair<double, double> texture_coordinates, const point3& p) const override;
+        color value(optional<pair<double, double>> texture_coordinates, const point3& p) const override;
 
     private:
         color albedo;
@@ -41,7 +43,7 @@ namespace Raytracing
         CheckerTexture(double scale, shared_ptr<Texture> even, shared_ptr<Texture> odd);
         CheckerTexture(double scale, const color& c1, const color& c2);
 
-        color value(pair<double, double> texture_coordinates, const point3& p) const override;
+        color value(optional<pair<double, double>> texture_coordinates, const point3& p) const override;
 
     private:
         double inv_scale;
@@ -54,12 +56,14 @@ namespace Raytracing
     public:
         ImageTexture(const char* filename);
         ImageTexture(string filename);
-        ImageTexture(const sTextureData& data);
+        ImageTexture(const sTextureData& data, const pair<WGPUAddressMode, WGPUAddressMode>& uv_wrap_modes);
 
-        color value(pair<double, double> texture_coordinates, const point3& p) const override;
+        color value(optional<pair<double, double>> texture_coordinates, const point3& p) const override;
+        pair<WGPUAddressMode, WGPUAddressMode> get_uv_wrap_modes() const;
 
     private:
         shared_ptr<ImageReader> image;
+        const pair<WGPUAddressMode, WGPUAddressMode> uv_wrap_modes = make_pair(WGPUAddressMode_Undefined, WGPUAddressMode_Undefined);
     };
 
     class NoiseTexture : public Texture
@@ -67,7 +71,7 @@ namespace Raytracing
     public:
         NoiseTexture(double scale, int depth = 7);
 
-        color value(pair<double, double> texture_coordinates, const point3& p) const override;
+        color value(optional<pair<double, double>> texture_coordinates, const point3& p) const override;
 
     private:
         shared_ptr<Perlin> noise;

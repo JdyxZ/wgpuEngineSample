@@ -44,7 +44,7 @@ public:
     double t;
     bool front_face;
     shared_ptr<Raytracing::Material> material;
-    pair<double, double> texture_coordinates;
+    optional<pair<double, double>> texture_coordinates = nullopt;
     PRIMITIVE type = NOT_SPECIFIED;
     vector<unsigned long long> elapsed_nanoseconds;
 
@@ -74,7 +74,7 @@ public:
     void scale(const vec3& scaling);
 
     Raytracing::Matrix44 get_model() const;
-    void set_model(const optional<Raytracing::Matrix44>& model);
+    Raytracing::Transform get_transform() const;
 
 protected:
     PRIMITIVE type = NOT_SPECIFIED;
@@ -83,6 +83,9 @@ protected:
     Raytracing::Matrix44 inverse_model = Raytracing::Matrix44(Raytracing::Matrix::identity(4));
     bool transformed = false;
     bool pdf = false;
+
+    void set_model(const optional<Raytracing::Matrix44>& model);
+    void set_model(const glm::mat4x4& model);
 
     const Ray transform_ray(const Ray& r) const;
     void transform_hit_record(hit_record& rec) const;

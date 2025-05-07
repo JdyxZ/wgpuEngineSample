@@ -1,6 +1,7 @@
 // Internal Headers
 #include "core/core.hpp"
 #include "image_reader.hpp"
+#include "utils/utilities.hpp"
 
 // External Headers
 #include "stb_image.h"
@@ -25,32 +26,30 @@ Raytracing::ImageReader::ImageReader() {}
 
 Raytracing::ImageReader::ImageReader(const sTextureData& tex_data)
 {
-    int total_bytes = int(tex_data.data.size()) * sizeof(uint8_t);
-    bdata = new uint8_t[total_bytes];
+    // Set bdata to point to texture data
+    bdata = tex_data.data.data();
 
-    memcpy(bdata, tex_data.data.data(), total_bytes);
-
+    // Set image specs
     image_width = tex_data.image_width;
     image_height = tex_data.image_height;
     bytes_per_pixel = tex_data.bytes_per_pixel;
     bytes_per_scanline = image_width * bytes_per_pixel;
-
 }
 
 Raytracing::ImageReader::~ImageReader()
 {
-    delete[] bdata;
+    // delete[] bdata; ERROR WITH ENGINE TEXTURES!!!
     free(fdata);
 }
 
 int Raytracing::ImageReader::width()  const
 { 
-    return (fdata == nullptr) ? 0 : image_width; 
+    return (bdata == nullptr) ? 0 : image_width; 
 }
 
 int Raytracing::ImageReader::height() const
 { 
-    return (fdata == nullptr) ? 0 : image_height; 
+    return (bdata == nullptr) ? 0 : image_height; 
 }
 
 bool Raytracing::ImageReader::load(const std::string& filename)
@@ -80,18 +79,19 @@ const uint8_t* Raytracing::ImageReader::pixel_data(int x, int y) const
     static uint8_t magenta[] = { 255, 0, 255 };
     if (bdata == nullptr) return magenta;
 
-    x = clamp(x, 0, image_width);
-    y = clamp(y, 0, image_height);
+    if (!is_within(x, 0, image_width, BoundType::inclusive, BoundType::exclusive))
+    {
+        string error = Logger::error("IMAGE_READER", std::format("Pixel horizontal location {} is outside of texture width bound [0, {})", x, image_width));
+        throw std::invalid_argument(error);
+    }
+
+    if (!is_within(y, 0, image_height, BoundType::inclusive, BoundType::exclusive))
+    {
+        string error = Logger::error("IMAGE_READER", std::format("Pixel vertial location {} is outside of texture height bound [0, {})", y, image_height));
+        throw std::invalid_argument(error);
+    }
 
     return bdata + y * bytes_per_scanline + x * bytes_per_pixel;
-}
-
-int Raytracing::ImageReader::clamp(int x, int low, int high)
-{
-    // Return the value clamped to the range [low, high).
-    if (x < low) return low;
-    if (x < high) return x;
-    return high - 1;
 }
 
 unsigned char Raytracing::ImageReader::float_to_byte(float value)
@@ -108,13 +108,14 @@ void Raytracing::ImageReader::convert_to_bytes()
     // Convert the linear floating point pixel data to bytes, storing the resulting byte
     // data in the `bdata` member.
     int total_bytes = image_width * image_height * bytes_per_pixel;
-    bdata = new uint8_t[total_bytes];
 
     // Iterate through all pixel components, converting from [0.0, 1.0] float values to
     // unsigned [0, 255] byte values.
-    auto* bptr = bdata;
+    auto* bptr = new uint8_t[total_bytes];
     auto* fptr = fdata;
     for (auto i = 0; i < total_bytes; i++, fptr++, bptr++)
         *bptr = float_to_byte(*fptr);
+
+    bdata = bptr;
 }
 

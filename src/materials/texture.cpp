@@ -14,7 +14,7 @@ Raytracing::SolidColor::SolidColor(const color& albedo) : albedo(albedo) {}
 
 Raytracing::SolidColor::SolidColor(double red, double green, double blue) : SolidColor(color(red, green, blue)) {}
 
-color Raytracing::SolidColor::value(pair<double, double> texture_coordinates, const point3& p) const
+color Raytracing::SolidColor::value(optional<pair<double, double>> texture_coordinates, const point3& p) const
 {
     return albedo;
 }
@@ -25,7 +25,7 @@ Raytracing::CheckerTexture::CheckerTexture(double scale, shared_ptr<Texture> eve
 Raytracing::CheckerTexture::CheckerTexture(double scale, const color& c1, const color& c2)
     : CheckerTexture(scale, make_shared<SolidColor>(c1), make_shared<SolidColor>(c2)) {}
 
-color Raytracing::CheckerTexture::value(pair<double, double> texture_coordinates, const point3& p) const
+color Raytracing::CheckerTexture::value(optional<pair<double, double>> texture_coordinates, const point3& p) const
 {
     auto x = int(floor(inv_scale * p.x));
     auto y = int(floor(inv_scale * p.y));
@@ -46,16 +46,21 @@ Raytracing::ImageTexture::ImageTexture(string filename)
     image = make_shared<ImageReader>(filename.c_str());
 }
 
-Raytracing::ImageTexture::ImageTexture(const sTextureData& data)
+Raytracing::ImageTexture::ImageTexture(const sTextureData& data, const pair<WGPUAddressMode, WGPUAddressMode>& uv_wrap_modes) : uv_wrap_modes(uv_wrap_modes)
 {
     image = make_shared<ImageReader>(data);
-
 }
 
-color Raytracing::ImageTexture::value(pair<double, double> texture_coordinates, const point3& p) const
+color Raytracing::ImageTexture::value(optional<pair<double, double>> texture_coordinates, const point3& p) const
 {
+    if (!texture_coordinates.has_value())
+    {
+        string error = Logger::error("TEXTURE", "Null texture coordinates!!!");
+        throw std::invalid_argument(error);
+    }
+
     // Unwrap texture coordinates
-    auto [u, v] = texture_coordinates;
+    auto [u, v] = texture_coordinates.value();
 
     // If we have no texture data, then return solid cyan as a debugging aid.
     if (image->height() <= 0) return CYAN;
@@ -76,12 +81,17 @@ color Raytracing::ImageTexture::value(pair<double, double> texture_coordinates, 
     return color(color_scale * pixel[0], color_scale * pixel[1], color_scale * pixel[2]);
 }
 
+pair<WGPUAddressMode, WGPUAddressMode> Raytracing::ImageTexture::get_uv_wrap_modes() const
+{
+    return uv_wrap_modes;
+}
+
 Raytracing::NoiseTexture::NoiseTexture(double scale, int depth) : scale(scale), depth(depth)
 {
     noise = make_shared<Perlin>();
 }
 
-color Raytracing::NoiseTexture::value(pair<double, double> texture_coordinates, const point3& p) const
+color Raytracing::NoiseTexture::value(optional<pair<double, double>> texture_coordinates, const point3& p) const
 {
     return color(.5, .5, .5) * (1 + std::sin(scale * p.z + 10 * noise->turbulance(p, depth)));
 }

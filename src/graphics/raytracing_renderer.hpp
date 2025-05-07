@@ -16,9 +16,9 @@ namespace Raytracing
     struct RendererSettings
     {
         // Render
-        int bounce_max_depth = 10;
+        int bounce_max_depth = 50;
         float min_hit_distance = 0.001f;
-        int samples_per_pixel = 10;
+        int samples_per_pixel = 100;
 
         // Background
         bool sky_blend = false;
@@ -63,9 +63,11 @@ public:
     int pre_initialize(GLFWwindow* window, bool use_mirror_screen = false) override;
     int initialize() override;
     int post_initialize() override;
+
     void clean() override;
     void update(float delta_time) override;
     void render() override;
+
     virtual void resize_window(int width, int height) override;
-    static void render_frame(vector<shared_ptr<Raytracing::Mesh>>& meshes, Raytracing::RendererSettings& settings);
+    void render_frame(vector<shared_ptr<Raytracing::Mesh>>& meshes, Raytracing::RendererSettings& settings);
 };
