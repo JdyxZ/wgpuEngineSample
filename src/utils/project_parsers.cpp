@@ -25,13 +25,13 @@ using Raytracing::color;
 using Raytracing::normal;
 using Raytracing::CameraData;
 
-vector<shared_ptr<Mesh>> parse_nodes(const vector<Node*>& nodes)
+vector<shared_ptr<Mesh>> parse_nodes(const vector<Node*>& nodes, const bool use_bvh)
 {
     vector<shared_ptr<Mesh>> meshes;
 
     for (auto node : nodes)
     {
-        auto node_meshes = parse_node(node);
+        auto node_meshes = parse_node(node, use_bvh);
 
         if (!node_meshes.empty())
             meshes.insert(meshes.end(), node_meshes.begin(), node_meshes.end());
@@ -40,7 +40,7 @@ vector<shared_ptr<Mesh>> parse_nodes(const vector<Node*>& nodes)
     return meshes;
 }
 
-vector<shared_ptr<Mesh>> parse_node(Node* node)
+vector<shared_ptr<Mesh>> parse_node(Node* node, const bool use_bvh)
 {
     vector<shared_ptr<Mesh>> meshes;
 
@@ -61,12 +61,12 @@ vector<shared_ptr<Mesh>> parse_node(Node* node)
 
             for (auto surface : scene_mesh->get_surfaces())
             {
-                auto new_surface = parse_surface(surface, model);
+                auto new_surface = parse_surface(surface, model, use_bvh);
                 surfaces.add(new_surface);
             }
 
             // Mesh
-            auto new_mesh = make_shared<Mesh>(name, surfaces, model);
+            auto new_mesh = make_shared<Mesh>(name, surfaces, model, use_bvh);
 
             meshes.push_back(new_mesh);
         }
@@ -85,7 +85,7 @@ vector<shared_ptr<Mesh>> parse_node(Node* node)
     return meshes;
 }
 
-shared_ptr<Raytracing::Surface> parse_surface(Surface* surface, const Raytracing::Matrix44& mesh_model)
+shared_ptr<Raytracing::Surface> parse_surface(Surface* surface, const Raytracing::Matrix44& mesh_model, const bool use_bvh)
 {
     // Material
     shared_ptr<Raytracing::Material> parsed_material;
@@ -143,7 +143,7 @@ shared_ptr<Raytracing::Surface> parse_surface(Surface* surface, const Raytracing
 			// Create and add triangle
 			if ((i + 1) % 3 == 0)
 			{
-				auto triangle = make_shared<Triangle>(triangle_vertices[0], triangle_vertices[1], triangle_vertices[2], parsed_material, mesh_model);
+				auto triangle = make_shared<Triangle>(triangle_vertices[0], triangle_vertices[1], triangle_vertices[2], parsed_material, mesh_model, false);
 				triangles.add(triangle);
 			}
         }
@@ -181,14 +181,14 @@ shared_ptr<Raytracing::Surface> parse_surface(Surface* surface, const Raytracing
 			// Create and add triangle
 			if ((i + 1) % 3 == 0)
 			{
-				auto triangle = make_shared<Triangle>(triangle_vertices[0], triangle_vertices[1], triangle_vertices[2], parsed_material, mesh_model);
+				auto triangle = make_shared<Triangle>(triangle_vertices[0], triangle_vertices[1], triangle_vertices[2], parsed_material, mesh_model, false);
 				triangles.add(triangle);
 			}
         }
     }
 
     // Parsed surface
-    auto parsed_surface = make_shared<Raytracing::Surface>(triangles, parsed_material);
+    auto parsed_surface = make_shared<Raytracing::Surface>(triangles, parsed_material, nullopt, use_bvh);
 
     return parsed_surface;
 }
@@ -216,7 +216,7 @@ optional<pair<double, double>> parse_texture_uvs(const optional<pair<double, dou
 
 double parse_uv(double coord, WGPUAddressMode wrap_mode)
 {
-	double parsed_coord;
+	double parsed_coord = -1;
 
 	switch (wrap_mode)
 	{

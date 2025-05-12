@@ -33,6 +33,9 @@ public:
     vec4& operator/=(const vec4& v);
     friend std::ostream& operator<<(std::ostream& out, const vec4& v);
 
+    // Util methods
+    vec3 dehomogenize() const;
+
     // Length-related functions
     double length() const override;
     double length_squared() const override;
@@ -78,6 +81,22 @@ inline vec4 operator/(const vec4& u, const vec4& v)
 inline vec4 operator/(const vec4& v, double t)
 {
     return (1 / t) * v;
+}
+
+inline bool operator==(const vec4& u, const vec4& v)
+{
+    for (int i = 0; i < 4; i++)
+    {
+        if (std::fabs(u[i] - v[i]) > DBL_EPSILON)
+            return false;
+    }
+
+    return true;
+}
+
+inline bool operator!=(const vec4& u, const vec4& v)
+{
+    return !(u == v);
 }
 
 // Aliases

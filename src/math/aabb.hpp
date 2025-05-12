@@ -7,12 +7,20 @@
 // Forward declarations
 class Ray;
 
+// Namespace forward declarations
+namespace Raytracing
+{
+    class Matrix44;
+}
+
 namespace Raytracing
 {
     class AABB
     {
     public:
         Interval x, y, z;
+        vec3 min_corner, max_corner, center, half_size;
+
         static const double delta;
 
         AABB();
@@ -29,8 +37,11 @@ namespace Raytracing
         int longest_axis() const; // Returns the index of the longest axis of the bounding box.
         bool hit(const Ray& r, Interval ray_t) const;
 
+        AABB transform(const Matrix44& m) const;
+
     private:
         void pad_to_minimums();
+        void set_aux_members();
     };
 
     // Operator overloads

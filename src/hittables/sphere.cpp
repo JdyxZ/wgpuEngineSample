@@ -12,7 +12,7 @@ using Raytracing::Matrix44;
 using Raytracing::infinity;
 using Raytracing::pi;
 
-Sphere::Sphere(point3 static_center, const double radius, const shared_ptr<Material>& material, const optional<Matrix44>& model, bool transform_ray, bool pdf) : radius(std::fmax(0, radius)), material(material)
+Sphere::Sphere(point3 static_center, const double radius, const shared_ptr<Material>& material, const optional<Matrix44>& model, bool transform, bool pdf) : radius(std::fmax(0, radius)), material(material)
 {
     type = SPHERE;
     this->pdf = pdf;
@@ -22,13 +22,14 @@ Sphere::Sphere(point3 static_center, const double radius, const shared_ptr<Mater
 
     center = motion_vector(origin, direction);
 
-    if (transform_ray)
-        set_model(model);
+    set_static_bbox();
 
-    set_bbox(model);
+    // If the Sphere does not belong to a hittable structure, use the model (should not be null or identity) to transform ray, hit data and bbox
+    if (transform)
+        set_model(model);
 }
 
-Sphere::Sphere(point3 start_center, point3 end_center, const double radius, const shared_ptr<Material>& material, const optional<Matrix44>& model, bool transform_ray) : radius(std::fmax(0, radius)), material(material)
+Sphere::Sphere(point3 start_center, point3 end_center, const double radius, const shared_ptr<Material>& material, const optional<Matrix44>& model, bool transform) : radius(std::fmax(0, radius)), material(material)
 {
     type = SPHERE;
 
@@ -37,13 +38,14 @@ Sphere::Sphere(point3 start_center, point3 end_center, const double radius, cons
 
     center = motion_vector(origin, direction);
 
-    if (transform_ray)
-        set_model(model);
+    set_moving_bbox();
 
-    set_bbox(model);
+    // If the Sphere does not belong to a hittable structure, use the model (should not be null or identity) to transform ray, hit data and bbox
+    if (transform)
+        set_model(model);
 }
 
-bool Sphere::hit(const Ray& r, Interval ray_t, hit_record& rec) const
+bool Sphere::hit(const Ray& r, const Interval& ray_t, hit_record& rec) const
 {
     const Ray local_ray = transformed ? transform_ray(r) : r;
 
@@ -85,38 +87,19 @@ bool Sphere::hit(const Ray& r, Interval ray_t, hit_record& rec) const
     return true;
 }
 
-AABB Sphere::bounding_box() const
+void Sphere::set_static_bbox()
 {
-    return bbox;
+    auto c0 = center.at(0);
+    vec3 rv = vec3(radius, radius, radius);
+    bbox = original_bbox = AABB(c0 - rv, c0 + rv);
 }
 
-void Sphere::set_bbox(const optional<Raytracing::Matrix44>& model)
+void Sphere::set_moving_bbox()
 {
-    point3 c0 = center.at(0);
-    point3 c1 = center.at(1);
+    auto c0 = center.at(0);
+    auto c1 = center.at(1);
     vec3 rv = vec3(radius, radius, radius);
-
-    AABB box1;
-    AABB box2;
-
-    if (model.has_value())
-    {
-        vec3 scailing = Raytracing::Transform::get_scaling(model.value());
-
-        auto tc0 = model.value() * vec4(c0, 1.0);
-        auto tc1 = model.value() * vec4(c1, 1.0);
-        auto trv = scailing * rv;
-
-        box1 = AABB(tc0 - trv, tc0 + trv);
-        box2 = AABB(tc1 - trv, tc1 + trv);
-    }
-    else
-    {
-        box1 = AABB(c0 - rv, c0 + rv);
-        box2 = AABB(c1 - rv, c1 + rv);
-    }
-
-    bbox = AABB(box1, box2);    
+    bbox = original_bbox = AABB(c0 - rv, c0 + rv, c1 - rv, c1 + rv);
 }
 
 double Sphere::pdf_value(const point3& origin, const vec3& direction) const

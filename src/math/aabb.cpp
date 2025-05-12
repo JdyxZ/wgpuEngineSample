@@ -2,6 +2,7 @@
 #include "core/core.hpp"
 #include "aabb.hpp"
 #include "ray.hpp"
+#include "matrix.hpp"
 
 Raytracing::AABB::AABB() 
 {
@@ -16,6 +17,7 @@ Raytracing::AABB::AABB(const point3& a, const point3& b)
     z = Interval(std::min(a.z, b.z), std::max(a.z, b.z));
 
     pad_to_minimums();
+    set_aux_members();
 }
 
 Raytracing::AABB::AABB(const point3& a, const point3& b, const point3& c)
@@ -25,6 +27,7 @@ Raytracing::AABB::AABB(const point3& a, const point3& b, const point3& c)
     z = Interval(std::min({ a.z, b.z, c.z }), std::max({ a.z, b.z, c.z }));
 
     pad_to_minimums();
+    set_aux_members();
 }
 
 Raytracing::AABB::AABB(const point3& a, const point3& b, const point3& c, const point3& d)
@@ -34,6 +37,7 @@ Raytracing::AABB::AABB(const point3& a, const point3& b, const point3& c, const 
     z = Interval(std::min({ a.z, b.z, c.z, d.z }), std::max({ a.z, b.z, c.z, d.z }));
 
     pad_to_minimums();
+    set_aux_members();
 }
 
 Raytracing::AABB::AABB(const AABB& box0, const AABB& box1)
@@ -44,6 +48,7 @@ Raytracing::AABB::AABB(const AABB& box0, const AABB& box1)
     z = Interval(box0.z, box1.z);
 
     pad_to_minimums();
+    set_aux_members();
 }
 
 Raytracing::AABB::AABB(const Interval& x, const Interval& y, const Interval& z)
@@ -53,6 +58,7 @@ Raytracing::AABB::AABB(const Interval& x, const Interval& y, const Interval& z)
     this->z = Interval(z);
 
     pad_to_minimums();
+    set_aux_members();
 }
 
 const Raytracing::AABB& Raytracing::AABB::empty()
@@ -65,6 +71,40 @@ const Raytracing::AABB& Raytracing::AABB::universe()
 {
     static const AABB instance(Interval::universe, Interval::universe, Interval::universe);
     return instance;
+}
+
+Raytracing::AABB Raytracing::AABB::transform(const Matrix44& m) const
+{
+    vec3 translation = { m[0][3], m[1][3], m[2][3] };
+
+    // Apply translation offset
+    vec3 transformed_min_corner = { translation.x, translation.y, translation.z };
+    vec3 transformed_max_corner = { translation.x, translation.y, translation.z };
+
+    double min_weight, max_weight;
+
+    // Apply rotation and scailing projecting AABB along the axis
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            min_weight = m[i][j] * min_corner[j];
+            max_weight = m[i][j] * max_corner[j];
+
+            if (min_weight < max_weight)
+            {
+                transformed_min_corner[i] += min_weight;
+                transformed_max_corner[i] += max_weight;
+            }
+            else
+            {
+                transformed_min_corner[i] += max_weight;
+                transformed_max_corner[i] += min_weight;
+            }
+        }
+    }
+
+    return AABB(transformed_min_corner, transformed_max_corner);
 }
 
 const Interval& Raytracing::AABB::axis_interval(int n) const
@@ -123,5 +163,14 @@ void Raytracing::AABB::pad_to_minimums()
     if (z.size() < delta) z = Interval(z.expand(delta));
 }
 
+void Raytracing::AABB::set_aux_members()
+{
+    min_corner = { x.min, y.min, z.min };
+    max_corner = { x.max, y.max, z.max };
+
+    center = (min_corner + max_corner) * 0.5;
+    half_size = (max_corner - min_corner) * 0.5;
+}
+
 // Static members
-const double Raytracing::AABB::delta = 0.0001;
+const double Raytracing::AABB::delta = 0.01;

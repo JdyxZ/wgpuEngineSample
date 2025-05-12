@@ -10,17 +10,20 @@
 class Box : public Hittable
 {
 public:
-	Box(point3 p0, point3 p1, const shared_ptr<Raytracing::Material>& material, const optional<Raytracing::Matrix44>& model = nullopt);
+	Box(point3 p0, point3 p1, const shared_ptr<Raytracing::Material>& material, const optional<Raytracing::Matrix44>& model = nullopt, bool use_bvh = true);
 
-	bool hit(const Ray& r, Interval ray_t, hit_record& rec) const override;
-	Raytracing::AABB bounding_box() const override;
+	bool hit(const Ray& r, const Interval& ray_t, hit_record& rec) const override;
+    void set_bbox();
+    void set_stats(const bvh_node& sides);
     const bvh_stats get_stats() const;
+    const bool is_bvh() const;
 
 private:
 	vec3 p0, p1;
 	shared_ptr<Raytracing::Material> material;
-	bvh_node sides;
-	Raytracing::AABB bbox;
+	shared_ptr<Hittable> sides;
+    bool use_bvh = true;
+    bvh_stats stats = bvh_stats();
 };
 
 

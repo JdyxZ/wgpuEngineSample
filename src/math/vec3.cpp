@@ -34,7 +34,7 @@ double vec3::operator[](int i) const
     case 2:
         return z;
     default:
-        string error = Logger::error("vec4", "Invalid operator access value!!!");
+        string error = Logger::error("vec3", "Invalid operator access value!!!");
         throw std::invalid_argument(error);
     }
 }

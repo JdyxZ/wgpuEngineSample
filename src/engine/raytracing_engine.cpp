@@ -61,6 +61,7 @@ void RayTracingEngine::create_scene()
     // Parse models
     GltfParser gltf_parser;
     gltf_parser.parse("models/github_assets/Cube/glTF/Cube.gltf", scene_nodes, PARSE_GLTF_FILL_SURFACE_DATA);
+    // gltf_parser.parse("models/github_assets/CarbonFibre/glTF-Binary/CarbonFibre.glb", scene_nodes, PARSE_GLTF_FILL_SURFACE_DATA);
     // gltf_parser.parse("models/github_assets/DamagedHelmet/glTF-Binary/DamagedHelmet.glb", scene_nodes, PARSE_GLTF_FILL_SURFACE_DATA);
     // gltf_parser.parse("models/github_assets/Avocado/glTF-Binary/Avocado.glb", scene_nodes, PARSE_GLTF_FILL_SURFACE_DATA);
     // gltf_parser.parse("models/github_assets/Corset/glTF-Binary/Corset.glb", scene_nodes, PARSE_GLTF_FILL_SURFACE_DATA);
@@ -107,6 +108,7 @@ void RayTracingEngine::render_gui()
             ImGui::SliderInt("Max Bounce Depth", &settings.bounce_max_depth, 1, 1000);
             ImGui::SliderFloat("Min Hit Distance", &settings.min_hit_distance, 0.001f, 10.0f);
             ImGui::SliderInt("Samples per Pixel", &settings.samples_per_pixel, 1, 1000);
+            ImGui::Checkbox("BVH Optimization", &settings.bvh_optimization);
 
             ImGui::NewLine();
 
@@ -153,7 +155,7 @@ void RayTracingEngine::render_gui()
             {
                 // Parse scene nodes to meshes for raytracer
                 vector<Node*> scene_nodes = main_scene->get_nodes();
-                vector<shared_ptr<Raytracing::Mesh>> meshes = parse_nodes(scene_nodes);
+                vector<shared_ptr<Raytracing::Mesh>> meshes = parse_nodes(scene_nodes, settings.bvh_optimization);
 
                 // Generate frame
                 renderer->render_frame(meshes, settings);

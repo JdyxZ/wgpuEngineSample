@@ -12,7 +12,7 @@ using Raytracing::Material;
 using Raytracing::Matrix44;
 using Raytracing::infinity;
 
-Triangle::Triangle(vertex A, vertex B, vertex C, const shared_ptr<Material>& material, const optional<Matrix44>& model, bool transform_ray, bool culling)
+Triangle::Triangle(vertex A, vertex B, vertex C, const shared_ptr<Material>& material, const optional<Matrix44>& model, bool transform, bool culling)
     : A(A), B(B), C(C), material(material), culling(culling)
 {
     type = TRIANGLE;
@@ -31,13 +31,14 @@ Triangle::Triangle(vertex A, vertex B, vertex C, const shared_ptr<Material>& mat
         throw std::runtime_error(error);
     }
 
-    if (transform_ray)
-        set_model(model);
+    set_bbox();
 
-    set_bbox(model);
+    // If the triangle does not belong to a hittable structure (such as a Mesh), use the model (should not be null or identity) to transform ray, hit data and bbox
+    if (transform)
+        set_model(model);
 }
 
-bool Triangle::hit(const Ray& r, Interval ray_t, hit_record& rec) const
+bool Triangle::hit(const Ray& r, const Interval& ray_t, hit_record& rec) const
 {
     // Transform ray into local object space
     const Ray local_ray = transformed ? transform_ray(r) : r;
@@ -94,6 +95,11 @@ bool Triangle::hit(const Ray& r, Interval ray_t, hit_record& rec) const
     return true;
 }
 
+void Triangle::set_bbox()
+{
+    bbox = original_bbox = AABB(A.position, B.position, C.position);
+}
+
 bool Triangle::has_vertex_colors() const
 {
     return A.color.has_value() && B.color.has_value() && C.color.has_value();
@@ -102,19 +108,6 @@ bool Triangle::has_vertex_colors() const
 bool Triangle::has_vertex_normals() const
 {
     return A.normal.has_value() && B.normal.has_value() && C.normal.has_value();
-}
-
-AABB Triangle::bounding_box() const
-{
-    return bbox;
-}
-
-void Triangle::set_bbox(const optional<Raytracing::Matrix44>& model)
-{
-    if (model.has_value())
-        bbox = AABB(model.value() * vec4(A.position, 1.0), model.value() * vec4(B.position, 1.0), model.value() * vec4(C.position, 1.0));
-    else
-        bbox = AABB(A.position, B.position, C.position);
 }
 
 double Triangle::pdf_value(const point3& hit_point, const vec3& scattering_direction) const

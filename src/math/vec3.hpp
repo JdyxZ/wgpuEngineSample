@@ -85,6 +85,22 @@ inline vec3 operator/(const vec3& v, double t)
     return (1 / t) * v;
 }
 
+inline bool operator==(const vec3& u, const vec3& v)
+{
+    for (int i = 0; i < 3; i++)
+    {
+        if (std::fabs(u[i] - v[i]) > DBL_EPSILON)
+            return false;
+    }
+
+    return true;
+}
+
+inline bool operator!=(const vec3& u, const vec3& v)
+{
+    return !(u == v);
+}
+
 // Aliases
 using point3 = vec3;
 

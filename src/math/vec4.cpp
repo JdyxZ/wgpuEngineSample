@@ -128,6 +128,11 @@ std::ostream& operator<<(std::ostream& out, const vec4& v)
     return out << "[" << v.x << ", " << v.y << ", " << v.z << ", " << v.w << "]";
 }
 
+vec3 vec4::dehomogenize() const
+{
+    return vec3(x/w, y/w, z/w);
+}
+
 double vec4::length() const
 {
     return sqrt(length_squared());

@@ -9,28 +9,35 @@
 using Raytracing::Surface;
 using Raytracing::AABB;
 
-Raytracing::Mesh::Mesh(const string& name, const hittable_list& surfaces, const optional<Raytracing::Matrix44>& model)
-	: _name(name)
+Raytracing::Mesh::Mesh(const string& name, const hittable_list& surfaces, const optional<Raytracing::Matrix44>& model, bool use_bvh)
+	: _name(name), use_bvh(use_bvh)
 {
 	type = MESH;
 
-    this->surface_list = surfaces;
-	this->surfaces = bvh_node(surfaces);
-	this->_num_surfaces = int(surfaces.size());
+    if (use_bvh)
+    {
+        auto surface_bvh = bvh_node(surfaces);
+        this->surfaces = make_shared<bvh_node>(surface_bvh);
+        set_stats(surface_bvh, surfaces);
+    }
+    else
+    {
+        this->surfaces = make_shared<hittable_list>(surfaces);
+    }
 
-    bbox = this->surfaces.bounding_box();
-
+    set_numbers(surfaces);
+    set_bbox();
     set_model(model);
 }
 
-bool Raytracing::Mesh::hit(const Ray& r, Interval ray_t, hit_record& rec) const
+bool Raytracing::Mesh::hit(const Ray& r, const Interval& ray_t, hit_record& rec) const
 {
     if (!transformed)
-        return surfaces.hit(r, ray_t, rec);
+        return surfaces->hit(r, ray_t, rec);
 
     const Ray local_ray = transform_ray(r);
 
-    const bool hit = surfaces.hit(local_ray, ray_t, rec);
+    const bool hit = surfaces->hit(local_ray, ray_t, rec);
 
     if(hit)
         transform_hit_record(rec);
@@ -38,26 +45,41 @@ bool Raytracing::Mesh::hit(const Ray& r, Interval ray_t, hit_record& rec) const
     return hit;	
 }
 
-AABB Raytracing::Mesh::bounding_box() const
-{ 
-	return bbox; 
+void Raytracing::Mesh::set_bbox()
+{
+    bbox = original_bbox = surfaces->get_bbox();
 }
 
-const string& Raytracing::Mesh::name() const
+const string Raytracing::Mesh::name() const
 { 
 	return _name; 
 }
 
-const int& Raytracing::Mesh::num_surfaces() const
+void Raytracing::Mesh::set_numbers(const hittable_list& surfaces)
+{
+    _num_surfaces = int(surfaces.size());
+
+    for (auto object : surfaces.objects)
+    {
+        auto surface = std::dynamic_pointer_cast<Surface>(object);
+        _num_triangles += surface->num_triangles();
+    }
+}
+
+const int Raytracing::Mesh::num_surfaces() const
 { 
 	return _num_surfaces; 
 }
 
-const bvh_stats Raytracing::Mesh::get_stats() const
+const int Raytracing::Mesh::num_triangles() const
 {
-    bvh_stats mesh_bvh_stats = surfaces.get_stats();
+    return _num_triangles;
+}
 
-    int surface_bvh_depth = mesh_bvh_stats.bvh_depth;
+void Raytracing::Mesh::set_stats(const bvh_node& surface_bvh, const hittable_list& surface_list)
+{
+    bvh_stats mesh_bvh_stats = surface_bvh.get_stats();
+
     int triangle_bvh_depth = 0;
 
     for (auto object : surface_list.objects)
@@ -69,6 +91,16 @@ const bvh_stats Raytracing::Mesh::get_stats() const
 
     mesh_bvh_stats.bvh_depth += triangle_bvh_depth;
 
-    return mesh_bvh_stats;
+    stats = mesh_bvh_stats;
+}
+
+const bvh_stats Raytracing::Mesh::get_stats() const
+{
+    return stats;
+}
+
+const bool Raytracing::Mesh::is_bvh() const
+{
+    return use_bvh;
 }
 

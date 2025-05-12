@@ -20,19 +20,16 @@ public:
 
     // Creates an implicit copy of the hittable list, which we will modify. 
     // The lifetime of the copied list only extends until this constructor exits.
-    bvh_node(hittable_list list);  
+    bvh_node(hittable_list list, const optional<Raytracing::Matrix44>& model = nullopt);  
 
     bvh_node(vector<shared_ptr<Hittable>>& objects, size_t start, size_t end, bvh_stats& stats);
-    bool hit(const Ray& r, Interval ray_t, hit_record& rec) const override;
-
-    Raytracing::AABB bounding_box() const override;
+    bool hit(const Ray& r, const Interval& ray_t, hit_record& rec) const override;
 
     const bvh_stats get_stats() const;
 
 private:
     shared_ptr<Hittable> left;
     shared_ptr<Hittable> right;
-    Raytracing::AABB bbox;
     bvh_stats stats;
 
     static bool box_compare(const shared_ptr<Hittable>& a, const shared_ptr<Hittable>& b, int axis_index);

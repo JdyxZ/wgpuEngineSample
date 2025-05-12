@@ -2,7 +2,7 @@
 #include "core/core.hpp"
 #include "scene.hpp"
 #include "utils/utilities.hpp"
-#include "hittables/hittable.hpp"
+#include "hittables/hittable_list.hpp"
 #include "graphics/camera.hpp"
 #include "utils/image_writer.hpp"
 #include "scenes.hpp"
@@ -14,9 +14,7 @@ using Raytracing::RendererSettings;
 
 Raytracing::Scene::Scene()
 {
-    stats = scene_stats();
-    full_pipeline = Chrono();
-    build_chrono = Chrono();
+    bbox = original_bbox = Raytracing::AABB::empty();
 }
 
 void Raytracing::Scene::initialize(RendererSettings& settings)
@@ -27,6 +25,7 @@ void Raytracing::Scene::initialize(RendererSettings& settings)
 
     this->bounce_max_depth = settings.bounce_max_depth;
     this->min_hit_distance = settings.min_hit_distance;
+    this->bvh_optimization = settings.bvh_optimization;
     this->samples_per_pixel = settings.samples_per_pixel;
     this->sky_blend = settings.sky_blend;
     this->background = color(bc.x, bc.y, bc.z);
@@ -48,7 +47,7 @@ void Raytracing::Scene::end()
 
 void Raytracing::Scene::add(shared_ptr<Hittable> object)
 {
-    hittable_list::add(object);
+    scene_hittables.push_back(object);
 
     if (object->has_pdf())
         hittables_with_pdf.push_back(object);
@@ -58,8 +57,15 @@ void Raytracing::Scene::add(shared_ptr<Hittable> object)
 
 void Raytracing::Scene::clear()
 {
-    hittable_list::clear();
+    scene_hittables.clear();
+    hittables_with_pdf.clear();
+    bbox = original_bbox = Raytracing::AABB::empty();
     stats = scene_stats(); // reset stats
+}
+
+size_t Raytracing::Scene::size() const
+{
+    return scene_hittables.size();
 }
 
 void Raytracing::Scene::build(Raytracing::Camera& camera, Raytracing::ImageWriter& image)
@@ -108,10 +114,17 @@ void Raytracing::Scene::build(Raytracing::Camera& camera, Raytracing::ImageWrite
         break;
     }
 
-    // Boost scene render with BVH
-    auto BVH_tree = make_shared<bvh_node>(*this);
-    clear();
-    add(BVH_tree);
+    // Create scene hittable from hittables inside scene
+    if (bvh_optimization)
+        scene_hittable = make_shared<bvh_node>(scene_hittables);
+    else
+        scene_hittable = make_shared<hittable_list>(scene_hittables);
+
+    // Set bbox
+    set_bbox();
+
+    // Clear scene hittables (not necessary but frees memory)
+    scene_hittables.clear();
 
     // End scene build time chrono
     build_chrono.end();
@@ -139,14 +152,44 @@ void Raytracing::Scene::build(vector<shared_ptr<Raytracing::Mesh>> meshes)
             Logger::error("MAIN", "Mesh cannot be cast to Hittable.");
     }
 
-    // Boost scene render with BVH
-    auto BVH_tree = make_shared<bvh_node>(*this);
-    clear();
-    add(BVH_tree);
+    // Create scene hittable from hittables inside scene
+    auto scene_hittables_list = hittable_list(scene_hittables);
+
+    if (bvh_optimization)
+        scene_hittable = make_shared<bvh_node>(scene_hittables_list);
+    else
+        scene_hittable = make_shared<hittable_list>(scene_hittables_list);
+
+    // Set bbox
+    set_bbox();
+
+    // Clear scene hittables (not necessary but frees memory)
+    scene_hittables.clear();
 
     // End scene build time chrono
     build_chrono.end();
 
     // Info log
     Logger::info("Main", "Scene build completed.");
+}
+
+bool Raytracing::Scene::hit(const Ray& r, const Interval& ray_t, hit_record& rec) const
+{
+    if (!transformed)
+        return scene_hittable->hit(r, ray_t, rec);
+
+    const Ray local_ray = transform_ray(r);
+
+    const bool hit = scene_hittable->hit(local_ray, ray_t, rec);
+
+    if (hit)
+        transform_hit_record(rec);
+
+    return hit;
+}
+
+void Raytracing::Scene::set_bbox()
+{
+    original_bbox = scene_hittable->get_bbox();
+    recompute_bbox();
 }

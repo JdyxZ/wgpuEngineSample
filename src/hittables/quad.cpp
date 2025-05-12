@@ -11,7 +11,7 @@ using Raytracing::Material;
 using Raytracing::Matrix44;
 using Raytracing::infinity;
 
-Quad::Quad(point3 Q, vec3 u, vec3 v, const shared_ptr<Material>& material, const optional<Matrix44>& model, bool transform_ray, bool pdf) : Q(Q), u(u), v(v), material(material)
+Quad::Quad(point3 Q, vec3 u, vec3 v, const shared_ptr<Material>& material, const optional<Matrix44>& model, bool transform, bool pdf) : Q(Q), u(u), v(v), material(material)
 {
     type = QUAD;
     this->pdf = pdf;
@@ -22,40 +22,14 @@ Quad::Quad(point3 Q, vec3 u, vec3 v, const shared_ptr<Material>& material, const
     w = n / dot(n, n);
     area = n.length();
 
-    if (transform_ray)
+    set_bbox();
+
+    // If the Quad does not belong to a hittable structure (such as a Box), use the model (should not be null or identity) to transform ray, hit data and bbox
+    if (transform)
         set_model(model);
-
-    set_bbox(model);
 }
 
-AABB Quad::bounding_box() const
-{ 
-    return bbox; 
-}
-
-void Quad::set_bbox(const optional<Raytracing::Matrix44>& model)
-{
-    vec3 q0, q1, q2, q3;
-
-    if (model.has_value())
-    {
-        q0 = model.value() * vec4(Q, 1.0);
-        q1 = model.value() * vec4(Q + u, 1.0);
-        q2 = model.value() * vec4(Q + v, 1.0);
-        q3 = model.value() * vec4(Q + u + v, 1.0);
-    }
-    else
-    {
-        q0 = Q;
-        q1 = Q + u;
-        q2 = Q + v;
-        q3 = Q + u + v;
-    }
-
-    bbox = AABB(Q, Q + u, Q + v, Q + u + v);
-}
-
-bool Quad::hit(const Ray& r, Interval ray_t, hit_record& rec) const
+bool Quad::hit(const Ray& r, const Interval& ray_t, hit_record& rec) const
 {
     const Ray local_ray = transformed ? transform_ray(r) : r;
     auto denom = dot(normal, local_ray.direction());
@@ -95,6 +69,11 @@ bool Quad::hit(const Ray& r, Interval ray_t, hit_record& rec) const
         transform_hit_record(rec);
 
     return true;
+}
+
+void Quad::set_bbox()
+{
+    bbox = original_bbox = AABB(Q, Q + u, Q + v, Q + u + v);
 }
 
 double Quad::pdf_value(const point3& hit_point, const vec3& scattering_direction) const

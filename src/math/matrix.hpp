@@ -101,7 +101,7 @@ namespace Raytracing
 
     // ************ Non-member operator overloads ************ //
 
-// Matrix Operators
+    // Matrix Operators
     inline Matrix operator+(const Matrix& A, const Matrix& B)
     {
         if (A.get_num_rows() != B.get_num_rows() || A.get_num_columns() != B.get_num_columns())
@@ -279,6 +279,29 @@ namespace Raytracing
     inline Matrix operator+(double scalar, const Matrix& M) { return M + scalar; }
     inline Matrix operator-(double scalar, const Matrix& M) { return (-M) + scalar; }
     inline Matrix operator*(double scalar, const Matrix& M) { return M * scalar; }
+
+    // Comparison operators
+    inline bool operator==(const Raytracing::Matrix& A, const Raytracing::Matrix& B)
+    {
+        if (A.get_num_rows() != B.get_num_rows() || A.get_num_columns() != B.get_num_columns())
+            return false;
+
+        for (unsigned i = 0; i < A.get_num_rows(); ++i)
+        {
+            for (unsigned j = 0; j < A.get_num_columns(); ++j)
+            {
+                if (std::fabs(A[i][j] - B[i][j]) > DBL_EPSILON)
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    inline bool operator!=(const Raytracing::Matrix& A, const Raytracing::Matrix& B)
+    {
+        return !(A == B);
+    }
 
     // Matrix44 & vec4 operators
     inline vec4 operator*(const Matrix44& mat, const vec4& v)

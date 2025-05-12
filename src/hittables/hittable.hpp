@@ -3,6 +3,7 @@
 // Headers
 #include "core/core.hpp"
 #include "math/vec3.hpp"
+#include "math/aabb.hpp"
 #include "math/matrix.hpp"
 #include "math/transform.hpp"
 
@@ -14,19 +15,19 @@ class Interval;
 namespace Raytracing
 {
     class Material;
-    class AABB;
 }
 
-enum PRIMITIVE
+enum HITTABLE_TYPE
 {
 	SPHERE,
-	TRIANGLE,
     QUAD,
-    BOX,
+	TRIANGLE,
     CONSTANT_MEDIUM,
+    BOX,
     MESH,
     SURFACE,
     BVH_NODE,
+    HITTABLE_LIST,
 	NOT_SPECIFIED
 };
 
@@ -45,7 +46,7 @@ public:
     bool front_face;
     shared_ptr<Raytracing::Material> material;
     optional<pair<double, double>> texture_coordinates = nullopt;
-    PRIMITIVE type = NOT_SPECIFIED;
+    HITTABLE_TYPE type = NOT_SPECIFIED;
     vector<unsigned long long> elapsed_nanoseconds;
 
     // Triangle attributes
@@ -62,25 +63,31 @@ public:
     Hittable();
     virtual ~Hittable() = default;
 
-    virtual bool hit(const Ray& r, Interval ray_t, hit_record& rec) const = 0;
-    virtual Raytracing::AABB bounding_box() const = 0;
+    virtual bool hit(const Ray& r, const Interval& ray_t, hit_record& rec) const = 0;
+    Raytracing::AABB get_bbox() const;
+    HITTABLE_TYPE get_type() const;
+    bool is_primitive() const;
+    bool is_bvh_tree() const;
     virtual double pdf_value(const point3& hit_point, const vec3& scattering_direction) const;
-    virtual vec3 random_scattering_ray(const point3& hit_point) const;
-    const PRIMITIVE get_type() const;
     const bool has_pdf() const;
+    virtual vec3 random_scattering_ray(const point3& hit_point) const;
+
+    Raytracing::Matrix44 get_model() const;
+    Raytracing::Transform get_transform() const;
 
     void translate(const vec3& translation);
     void rotate(const vec3& axis, const double& angle);
     void scale(const vec3& scaling);
 
-    Raytracing::Matrix44 get_model() const;
-    Raytracing::Transform get_transform() const;
+    void recompute_bbox();
 
 protected:
-    PRIMITIVE type = NOT_SPECIFIED;
+    optional<Raytracing::AABB> original_bbox = nullopt;
+    optional<Raytracing::AABB> bbox = nullopt;
     Raytracing::Transform transform = Raytracing::Transform();
-    Raytracing::Matrix44 model = Raytracing::Matrix44(Raytracing::Matrix::identity(4));
-    Raytracing::Matrix44 inverse_model = Raytracing::Matrix44(Raytracing::Matrix::identity(4));
+    Raytracing::Matrix44 model = Raytracing::Matrix::identity(4);
+    Raytracing::Matrix44 inverse_model = Raytracing::Matrix::identity(4);
+    HITTABLE_TYPE type = NOT_SPECIFIED;
     bool transformed = false;
     bool pdf = false;
 
@@ -89,6 +96,9 @@ protected:
 
     const Ray transform_ray(const Ray& r) const;
     void transform_hit_record(hit_record& rec) const;
+
+private:
+    void transform_bbox(const optional<Raytracing::Matrix44>& model);
 };
 
 

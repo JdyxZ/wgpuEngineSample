@@ -8,7 +8,7 @@
 // Usings
 using Raytracing::AABB;
 
-bvh_node::bvh_node(hittable_list list)
+bvh_node::bvh_node(hittable_list list, const optional<Raytracing::Matrix44>& model)
 {
     stats = bvh_stats();
 
@@ -24,6 +24,8 @@ bvh_node::bvh_node(hittable_list list)
     instance.stats = stats;
 
     *this = instance;
+
+    set_model(model);
 }
 
 bvh_node::bvh_node(vector<shared_ptr<Hittable>>& objects, size_t start, size_t end, bvh_stats& stats)
@@ -32,11 +34,13 @@ bvh_node::bvh_node(vector<shared_ptr<Hittable>>& objects, size_t start, size_t e
     type = BVH_NODE;
 
     // Build the bounding box of the span of source objects.
-    bbox = AABB::empty();
+    bbox = original_bbox = AABB::empty();
     for (size_t object_index = start; object_index < end; object_index++)
-        bbox = AABB(bbox, objects[object_index]->bounding_box());
+    {
+        bbox = original_bbox = AABB(original_bbox.value(), objects[object_index]->get_bbox());
+    }
 
-    int axis = bbox.longest_axis();
+    int axis = original_bbox.value().longest_axis();
 
     auto comparator = (axis == 0) ? box_x_compare
                     : (axis == 1) ? box_y_compare
@@ -48,12 +52,13 @@ bvh_node::bvh_node(vector<shared_ptr<Hittable>>& objects, size_t start, size_t e
     {
         // Assign object to leaves
         auto object = objects[start];
-        left = right = object;
+        left = object;
+        right = nullptr;
 
         // Calculate depth and nodes
         auto node_depth = bvh_stats::get_bvh_depth(object);
         depth = node_depth == 0 ? 0 : node_depth + 1;
-        nodes = 1; // Same object for left and and right leaf
+        nodes = 1; // Right node is null, so only one node is counted
 
         // Process object for bvh stats
         stats.add(object);
@@ -95,25 +100,26 @@ bvh_node::bvh_node(vector<shared_ptr<Hittable>>& objects, size_t start, size_t e
     }
 }
 
-bool bvh_node::hit(const Ray& r, Interval ray_t, hit_record& rec) const
+bool bvh_node::hit(const Ray& r, const Interval& ray_t, hit_record& rec) const
 {
     const Ray local_ray = transformed ? transform_ray(r) : r;
 
-    if (!bbox.hit(local_ray, ray_t))
+    bool special_case = (right == nullptr) && left->is_bvh_tree(); // We assume left node cannot be nullptr !!!
+
+    if (!special_case && !bbox.value().hit(r, ray_t))
         return false;
 
-    const bool hit_left = left->hit(local_ray, ray_t, rec);
-    const bool hit_right = right->hit(local_ray, Interval(ray_t.min, hit_left ? rec.t : ray_t.max), rec);
+    bool hit_left = false, hit_right = false;
+
+    hit_left = left->hit(r, ray_t, rec);
+
+    if (right != nullptr)
+        hit_right = right->hit(r, Interval(ray_t.min, hit_left ? rec.t : ray_t.max), rec);
 
     if (transformed && (hit_left || hit_right))
         transform_hit_record(rec);
 
     return hit_left || hit_right;
-}
-
-AABB bvh_node::bounding_box() const
-{
-    return bbox;
 }
 
 const bvh_stats bvh_node::get_stats() const
@@ -123,8 +129,8 @@ const bvh_stats bvh_node::get_stats() const
 
 bool bvh_node::box_compare(const shared_ptr<Hittable>& a, const shared_ptr<Hittable>& b, int axis_index)
 {
-    auto a_axis_interval = a->bounding_box().axis_interval(axis_index);
-    auto b_axis_interval = b->bounding_box().axis_interval(axis_index);
+    auto a_axis_interval = a->get_bbox().axis_interval(axis_index);
+    auto b_axis_interval = b->get_bbox().axis_interval(axis_index);
     return a_axis_interval.min < b_axis_interval.min;
 }
 

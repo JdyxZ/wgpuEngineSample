@@ -176,14 +176,14 @@ color Raytracing::Camera::ray_color(const Ray& sample_ray, int depth, const Scen
     Interval ray_t(scene.min_hit_distance, Raytracing::infinity);
 
     // Background hit  
-    if (!scene.intersect(sample_ray, ray_t, hrec))
+    if (!scene.hit(sample_ray, ray_t, hrec))
     {
         background_rays++;
         return scene.sky_blend ? sky_blend(scene, sample_ray) : scene.background;
     }
 
     // Hit object type
-    PRIMITIVE hit_object_type = hrec.type;
+    HITTABLE_TYPE hit_object_type = hrec.type;
 
     // If the ray hits an object, calculate the color of the hit point
     switch (hit_object_type)

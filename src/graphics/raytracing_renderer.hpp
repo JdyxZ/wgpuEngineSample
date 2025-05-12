@@ -19,6 +19,7 @@ namespace Raytracing
         int bounce_max_depth = 50;
         float min_hit_distance = 0.001f;
         int samples_per_pixel = 100;
+        bool bvh_optimization = true;
 
         // Background
         bool sky_blend = false;

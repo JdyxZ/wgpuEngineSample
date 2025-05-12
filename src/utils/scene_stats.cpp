@@ -54,12 +54,6 @@ void scene_stats::add(const shared_ptr<Hittable> object)
         triangles++;
         primitives++;
         break;
-    case BOX:
-    {
-        auto box_ptr = std::dynamic_pointer_cast<Box>(object);
-        *this += box_ptr->get_stats();
-        break;
-    }
     case QUAD:
     {
         auto quad_ptr = std::dynamic_pointer_cast<Quad>(object);
@@ -71,11 +65,34 @@ void scene_stats::add(const shared_ptr<Hittable> object)
         primitives++;
         break;
     }
+    case BOX:
+    {
+        auto box_ptr = std::dynamic_pointer_cast<Box>(object);
+        if (box_ptr->is_bvh())
+        {
+            *this += box_ptr->get_stats();
+        }
+        else
+        {
+            quads += 6;
+            primitives += 6;
+        }
+        break;
+    }
     case MESH:
     {
         auto mesh_ptr = std::dynamic_pointer_cast<Mesh>(object);
         meshes.push_back(mesh_ptr);
-        *this += mesh_ptr->get_stats();
+        if (mesh_ptr->is_bvh())
+        {
+            *this += mesh_ptr->get_stats();
+        }
+        else
+        {
+            int num_triangles = mesh_ptr->num_triangles();
+            triangles += num_triangles;
+            primitives += num_triangles;
+        }
         break;
     }
     case BVH_NODE:

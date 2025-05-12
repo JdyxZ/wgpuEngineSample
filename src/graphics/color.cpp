@@ -30,7 +30,7 @@ tuple<uint8_t, uint8_t, uint8_t, uint8_t> compute_color(const color& pixel_color
     uint8_t red_byte = static_cast<uint8_t>(256 * intensity.clamp(r));
     uint8_t green_byte = static_cast<uint8_t>(256 * intensity.clamp(g));
     uint8_t blue_byte = static_cast<uint8_t>(256 * intensity.clamp(b));
-    uint8_t alpha = 1.0;
+    uint8_t alpha = 1;
 
     return std::make_tuple(red_byte, green_byte, blue_byte, alpha);
 }
