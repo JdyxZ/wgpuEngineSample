@@ -63,7 +63,8 @@ color Raytracing::ImageTexture::value(optional<pair<double, double>> texture_coo
     auto [u, v] = texture_coordinates.value();
 
     // If we have no texture data, then return solid cyan as a debugging aid.
-    if (image->height() <= 0) return CYAN;
+    if (image->height() <= 0)
+        return CYAN;
 
     // Clamp input texture coordinates to [0,1] x [1,0]
     u = Interval::unitary.clamp(u);
@@ -74,11 +75,9 @@ color Raytracing::ImageTexture::value(optional<pair<double, double>> texture_coo
     auto j = int(v * image->height());
 
     // Read pixel data
-    auto pixel = image->pixel_data(i, j);
+    color pixel_color = image->pixel_data(i, j);
 
-    // Scale pixel color to 8 bit data
-    auto color_scale = 1.0 / 255.0;
-    return color(color_scale * pixel[0], color_scale * pixel[1], color_scale * pixel[2]);
+    return pixel_color;
 }
 
 pair<WGPUAddressMode, WGPUAddressMode> Raytracing::ImageTexture::get_uv_wrap_modes() const

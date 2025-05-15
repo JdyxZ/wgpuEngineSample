@@ -152,10 +152,10 @@ bool vec3::is_zero() const
 
 vec3 vec3::random()
 {
-    return vec3(random_double(), random_double(), random_double());
+    return vec3(random_number<double>(), random_number<double>(), random_number<double>());
 }
 
 vec3 vec3::random(double min, double max)
 {
-    return vec3(random_double(min, max), random_double(min, max), random_double(min, max));
+    return vec3(random_number<double>(min, max), random_number<double>(min, max), random_number<double>(min, max));
 }

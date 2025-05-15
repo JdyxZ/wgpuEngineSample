@@ -160,12 +160,12 @@ bool vec4::near_zero() const
 
 vec4 vec4::random()
 {
-    return vec4(random_double(), random_double(), random_double(), random_double());
+    return vec4(random_number<double>(), random_number<double>(), random_number<double>(), random_number<double>());
 }
 
 vec4 vec4::random(double min, double max)
 {
-    return vec4(random_double(min, max), random_double(min, max), random_double(min, max), random_double(min, max));
+    return vec4(random_number<double>(min, max), random_number<double>(min, max), random_number<double>(min, max), random_number<double>(min, max));
 }
 
 

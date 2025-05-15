@@ -117,11 +117,29 @@ void Raytracing::Camera::render(Scene& scene, ImageWriter& image)
             // Avarage samples
             pixel_color /= scene.samples_per_pixel;
 
-            // Compute color
-            tuple<uint8_t, uint8_t, uint8_t, uint8_t> RGBA_color = compute_color(pixel_color);
+            // Compute and write color depending on the dynamic range
+            auto dynamic_range = image.get_dynamic_range();
+            switch (dynamic_range)
+            {
+                case (LDR) :
+                {
+                    // Compute color
+                    auto RGBA_color = compute_LDR_color(pixel_color);
 
-            // Save pixel color into image buffer (row-major order)
-            image.write_pixel(pixel_row, pixel_column, RGBA_color);
+                    // Save pixel color into image buffer (row-major order)
+                    image.write_pixel(pixel_row, pixel_column, RGBA_color);
+                }
+                case (HDR):
+                {
+                    // Compute color
+                    auto RGBA_color = compute_HDR_color(pixel_color);
+
+                    // Save pixel color into image buffer (row-major order)
+                    image.write_pixel(pixel_row, pixel_column, RGBA_color);
+                }
+            }
+
+
 
             // Update progress
             // #pragma omp atomic
@@ -156,7 +174,7 @@ const Ray Raytracing::Camera::get_ray_sample(int pixel_row, int pixel_column, in
 
     auto ray_origin = (defocus_angle <= 0) ? lookfrom : defocus_disk_sample(lookfrom, defocus_disk_u, defocus_disk_v);
     auto ray_direction = pixel_sample - ray_origin;
-    auto ray_time = random_double();
+    auto ray_time = random_number<double>();
 
     auto ray = Ray(ray_origin, ray_direction, ray_time);
 

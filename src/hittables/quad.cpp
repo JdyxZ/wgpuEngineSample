@@ -92,7 +92,7 @@ double Quad::pdf_value(const point3& hit_point, const vec3& scattering_direction
 
 vec3 Quad::random_scattering_ray(const point3& hit_point) const
 {
-    auto p = Q + (random_double() * u) + (random_double() * v);
+    auto p = Q + (random_number<double>() * u) + (random_number<double>() * v);
     return p - hit_point;
 }
 

@@ -56,21 +56,21 @@ constexpr double radians_to_degrees(double radians)
     return radians * 180.0 / Raytracing::pi;
 }
 
-inline double random_double() // Returns a random real in [0,1).
+template<arithmetic T>
+T random_number(T min = T(0), T max = T(1)) // Returns a random T in [min,max).
 {
-    static std::uniform_real_distribution<double> distribution(0.0, 1.0);
-    static std::mt19937 generator;
-    return distribution(generator);
-}
+    static std::mt19937 generator(std::random_device{}());
 
-inline double random_double(double min, double max) // Returns a random real in [min,max).
-{
-    return min + (max - min) * random_double();
-}
-
-inline int random_int(int min, int max) // Returns a random integer in [min,max].
-{
-    return int(random_double(min, max + 1));
+    if constexpr (std::is_integral_v<T>)
+    {
+        std::uniform_int_distribution<T> distribution(min, max);
+        return distribution(generator);
+    }
+    else
+    {
+        std::uniform_real_distribution<T> distribution(min, max);
+        return distribution(generator);
+    }
 }
 
 // ************** VECTOR UTILITIES ************** //
@@ -139,8 +139,7 @@ inline vec3 max_vector(const vec3& v1, const vec3& v2)
 
 // ************** STD VECTOR UTILITIES ************** //
 
-template <typename T>
-requires std::is_arithmetic_v<T>
+template <arithmetic T>
 inline T vector_mean(const vector<T>& data)
 {
     if (data.empty())
@@ -151,8 +150,7 @@ inline T vector_mean(const vector<T>& data)
     return static_cast<T>(mean);
 }
 
-template <typename T>
-requires std::is_arithmetic_v<T>
+template <arithmetic T>
 inline T vector_min_value(const vector<T>& data)
 {
     if (data.empty())
@@ -162,8 +160,7 @@ inline T vector_min_value(const vector<T>& data)
     return static_cast<T>(min);
 }
 
-template <typename T>
-requires std::is_arithmetic_v<T>
+template <arithmetic T>
 inline T vector_max_value(const vector<T>& data)
 {
     if (data.empty())
@@ -173,8 +170,7 @@ inline T vector_max_value(const vector<T>& data)
     return static_cast<T>(max);
 }
 
-template <typename T>
-requires std::is_arithmetic_v<T>
+template <arithmetic T>
 inline T vector_standard_deviation(const vector<T>& data)
 {
     if (data.empty())
@@ -194,16 +190,14 @@ inline T vector_standard_deviation(const vector<T>& data)
     return static_cast<T>(standard_deviation);
 }
 
-template <typename T>
-requires std::is_arithmetic_v<T>
+template <arithmetic T>
 inline T vector_sum(const vector<T>& data)
 {
     auto sum = std::accumulate(data.begin(), data.end(), T{ 0 });
     return static_cast<T>(sum);
 }
 
-template <typename T>
-requires std::is_arithmetic_v<T>
+template <arithmetic T>
 inline void print_vector_statistics(const string name, const std::vector<T>& data)
 {
     std::cout << name << " statistics:" << std::endl
@@ -235,13 +229,13 @@ inline bool is_within(T value, T lower, T upper, BoundType lower_bound, BoundTyp
 
 inline vec3 sample_square() // Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
 {
-    return vec3(random_double() - 0.5, random_double() - 0.5, 0);
+    return vec3(random_number<double>() - 0.5, random_number<double>() - 0.5, 0);
 }
 
 inline vec3 sample_square_stratified(int sample_row, int sample_column, double pixel_sample_sqrt_inv) // Returns the vector to a random point in the square sub-pixel specified by grid indices sample_row and sample_column, for an idealized unit square pixel [-.5,-.5] to [+.5,+.5].
 {
-    auto px = ((sample_column + random_double()) * pixel_sample_sqrt_inv) - 0.5;
-    auto py = ((sample_row + random_double()) * pixel_sample_sqrt_inv) - 0.5;
+    auto px = ((sample_column + random_number<double>()) * pixel_sample_sqrt_inv) - 0.5;
+    auto py = ((sample_row + random_number<double>()) * pixel_sample_sqrt_inv) - 0.5;
 
     return vec3(px, py, 0);
 }
@@ -250,7 +244,7 @@ inline vec3 random_in_unit_disk() // Returns a random point in the unit disk.
 {
     while (true)
     {
-        auto p = vec3(random_double(-1, 1), random_double(-1, 1), 0);
+        auto p = vec3(random_number<double>(-1, 1), random_number<double>(-1, 1), 0);
         if (p.length_squared() < 1)
             return p;
     }
@@ -288,8 +282,8 @@ inline vec3 random_on_hemisphere(const vec3& normal)
 
 inline vec3 random_cosine_hemisphere_direction()
 {
-    auto r1 = random_double();
-    auto r2 = random_double();
+    auto r1 = random_number<double>();
+    auto r2 = random_number<double>();
 
     auto phi = 2 * Raytracing::pi * r1;
     auto x = std::cos(phi) * std::sqrt(r2);

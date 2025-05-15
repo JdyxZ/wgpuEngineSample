@@ -2,6 +2,7 @@
 #include "core/core.hpp"
 #include "image_reader.hpp"
 #include "utils/utilities.hpp"
+#include "graphics/color.hpp"
 
 // External Headers
 #include "stb_image.h"
@@ -24,98 +25,191 @@ Raytracing::ImageReader::ImageReader(const char* image_filename)
 
 Raytracing::ImageReader::ImageReader() {}
 
-Raytracing::ImageReader::ImageReader(const sTextureData& tex_data)
-{
-    // Set bdata to point to texture data
-    bdata = tex_data.data.data();
-
-    // Set image specs
-    image_width = tex_data.image_width;
-    image_height = tex_data.image_height;
-    bytes_per_pixel = tex_data.bytes_per_pixel;
-    bytes_per_scanline = image_width * bytes_per_pixel;
-}
-
 Raytracing::ImageReader::~ImageReader()
 {
-    // delete[] bdata; ERROR WITH ENGINE TEXTURES!!!
-    free(fdata);
+    switch (data_type)
+    {
+    case ImageDataType::UINT8_T:
+        delete[] uint8_data;
+        break;
+    case ImageDataType::UINT16_T:
+        delete[] uint16_data;
+        break;
+    case ImageDataType::FLOAT:
+        delete[] float_data;
+        break;
+    }
 }
 
-int Raytracing::ImageReader::width()  const
-{ 
-    return (bdata == nullptr) ? 0 : image_width; 
-}
-
-int Raytracing::ImageReader::height() const
-{ 
-    return (bdata == nullptr) ? 0 : image_height; 
-}
-
-bool Raytracing::ImageReader::load(const std::string& filename)
+Raytracing::ImageReader::ImageReader(const sTextureData& tex_data)
 {
-    // Loads the linear (gamma=1) image data from the given file name. Returns true if the
-    // load succeeded. The resulting data buffer points to the three RGB [0.0, 1.0]
-    // floating-point values of the first pixel (red, then green, then blue). Pixels are
-    // contiguous, going left to right for the width of the image, followed by the next row
-    // below, for the full height of the image.
+    // Set image specs
+    is_linear = true; // All textures from framework are linear (assumption)
+    image_width = tex_data.image_width;
+    image_height = tex_data.image_height;
+    channels = tex_data.channels;
+    bytes_per_pixel = tex_data.bytes_per_pixel;
+    bytes_per_scanline = image_width * bytes_per_pixel;
+    bit_depth = (bytes_per_pixel / channels) * 8;
 
-    bytes_per_pixel = 3;
-    auto n = bytes_per_pixel; // Dummy out parameter: original components per pixel
-    fdata = stbi_loadf(filename.c_str(), &image_width, &image_height, &n, bytes_per_pixel);
+    // Get image data type
+    ImageDataType data_type = get_data_type(bit_depth);
 
-    if (fdata == nullptr) return false;
+    // Set proper pointer to point to texture data
+    switch (data_type)
+    {
+    case ImageDataType::UINT8_T:
+        uint8_data = tex_data.data.data();
+        break;
+    case ImageDataType::UINT16_T:
+        uint16_data = reinterpret_cast<const uint16_t*>(tex_data.data.data());
+        break;
+    case ImageDataType::FLOAT:
+        float_data = reinterpret_cast<const float*>(tex_data.data.data());
+        break;
+    }
+}
+
+bool Raytracing::ImageReader::load(const string& filename)
+{
+    // Load image data (directly loads data in linear (gamma = 1))
+    float* float_ptr = stbi_loadf(filename.c_str(), &image_width, &image_height, &channels, 4);
+
+    // Check
+    if (float_ptr == nullptr)
+        return false;
+
+    // Get image specs
+    ImageDataType data_type = get_data_type(filename);
+
+    switch (data_type)
+    {
+    case ImageDataType::UINT8_T:
+        uint8_data = convert_float_to_uint8(float_ptr, image_width * image_height * channels);
+        bytes_per_pixel = sizeof(uint8_t) * channels;
+        bit_depth = 8;
+        stbi_image_free(float_ptr);
+        break;
+    case ImageDataType::UINT16_T:
+        uint16_data = convert_float_to_uint16(float_ptr, image_width * image_height * channels);
+        bytes_per_pixel = sizeof(uint16_t) * channels;
+        bit_depth = 16;
+        stbi_image_free(float_ptr);
+        break;
+    case ImageDataType::FLOAT:
+        bytes_per_pixel = sizeof(float) * channels;
+        bit_depth = 32;
+        float_data = float_ptr;
+        break;
+    }
 
     bytes_per_scanline = image_width * bytes_per_pixel;
-    convert_to_bytes();
 
     return true;
 }
 
-const uint8_t* Raytracing::ImageReader::pixel_data(int x, int y) const
+const Raytracing::color Raytracing::ImageReader::pixel_data(int x, int y) const
 {
-    // Return the address of the three RGB bytes of the pixel at x,y. If there is no image
-    // data, returns magenta.
-    static uint8_t magenta[] = { 255, 0, 255 };
-    if (bdata == nullptr) return magenta;
+    if (image_width == 0 && image_height == 0)
+        return MAGENTA;
 
-    if (!is_within(x, 0, image_width, BoundType::inclusive, BoundType::exclusive))
-    {
-        string error = Logger::error("IMAGE_READER", std::format("Pixel horizontal location {} is outside of texture width bound [0, {})", x, image_width));
-        throw std::invalid_argument(error);
+    if (!is_within(x, 0, image_width, BoundType::inclusive, BoundType::exclusive) ||
+        !is_within(y, 0, image_height, BoundType::inclusive, BoundType::exclusive)) {
+        Logger::error("IMAGE_READER", std::format("Pixel coordinates ({}, {}) out of bounds", x, y));
+        return MAGENTA;
     }
 
-    if (!is_within(y, 0, image_height, BoundType::inclusive, BoundType::exclusive))
+    color pixel_color = MAGENTA;
+    int index = (y * image_width + x) * channels;
+
+    switch (data_type)
     {
-        string error = Logger::error("IMAGE_READER", std::format("Pixel vertial location {} is outside of texture height bound [0, {})", y, image_height));
-        throw std::invalid_argument(error);
+    case ImageDataType::UINT8_T:
+    {
+        const auto pixel = &uint8_data[index];
+        auto scale = 1.0f / 255.0f;
+        pixel_color = vec3(pixel[0], pixel[1], pixel[2]) * scale;
+        break;
+    }
+    case ImageDataType::UINT16_T:
+    {
+        const auto pixel = &uint16_data[index];
+        auto scale = 1.0f / 65535.0f;
+        pixel_color = vec3(pixel[0], pixel[1], pixel[2]) * scale;
+        break;
+    }
+    case ImageDataType::FLOAT:
+    {
+        const auto pixel = &float_data[index];
+        pixel_color = vec3(pixel[0], pixel[1], pixel[2]);
+        pixel_color = ToneMapper::ACESFitted(pixel_color);
+        break;
+    }
     }
 
-    return bdata + y * bytes_per_scanline + x * bytes_per_pixel;
+    return pixel_color;
 }
 
-unsigned char Raytracing::ImageReader::float_to_byte(float value)
+uint8_t* Raytracing::ImageReader::convert_float_to_uint8(const float* float_data, size_t count)
 {
-    if (value <= 0.0)
-        return 0;
-    if (1.0 <= value)
-        return 255;
-    return static_cast<unsigned char>(256.0 * value);
+    uint8_t* result = new uint8_t[count];
+
+    for (size_t i = 0; i < count; ++i)
+    {
+        float clamped = std::clamp(float_data[i], 0.0f, 1.0f);
+        result[i] = static_cast<uint8_t>(clamped * 255.0f + 0.5f); // +0.5f for rounding
+    }
+
+    return result;
 }
 
-void Raytracing::ImageReader::convert_to_bytes()
+uint16_t* Raytracing::ImageReader::convert_float_to_uint16(const float* float_data, size_t count)
 {
-    // Convert the linear floating point pixel data to bytes, storing the resulting byte
-    // data in the `bdata` member.
-    int total_bytes = image_width * image_height * bytes_per_pixel;
+    uint16_t* result = new uint16_t[count];
 
-    // Iterate through all pixel components, converting from [0.0, 1.0] float values to
-    // unsigned [0, 255] byte values.
-    auto* bptr = new uint8_t[total_bytes];
-    auto* fptr = fdata;
-    for (auto i = 0; i < total_bytes; i++, fptr++, bptr++)
-        *bptr = float_to_byte(*fptr);
+    for (size_t i = 0; i < count; ++i)
+    {
+        float clamped = std::clamp(float_data[i], 0.0f, 1.0f);
+        result[i] = static_cast<uint16_t>(clamped * 65535.0f + 0.5f);
+    }
 
-    bdata = bptr;
+    return result;
+}
+
+int Raytracing::ImageReader::width()  const
+{
+    return image_width;
+}
+
+int Raytracing::ImageReader::height() const
+{
+    return image_height;
+}
+
+Raytracing::ImageDataType Raytracing::ImageReader::get_data_type(uint8_t bit_depth) const
+{
+    if (bit_depth == 8)
+        return ImageDataType::UINT8_T;
+
+    if (bit_depth == 16)
+        return ImageDataType::UINT16_T;
+
+    if (bit_depth == 32)
+        return ImageDataType::FLOAT;
+
+    string error = Logger::error("IMAGE_READER", std::format("The texture you are trying to parse has invalid or unavailable bit depth of {} bits per channel. Only 8, 16 and 32 bit formats are supported", bit_depth));
+    throw std::runtime_error(error);
+}
+
+Raytracing::ImageDataType Raytracing::ImageReader::get_data_type(const string& filename) const
+{
+    if (stbi_is_hdr(filename.c_str()))
+        return ImageDataType::FLOAT;
+
+    if (stbi_is_16_bit(filename.c_str()))
+        return ImageDataType::UINT16_T;
+
+    // Assume it is 8 bit
+    return ImageDataType::UINT8_T;
 }
 

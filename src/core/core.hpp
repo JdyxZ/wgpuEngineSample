@@ -35,6 +35,7 @@
 using std::make_shared;
 using std::make_unique;
 using std::make_pair;
+using std::make_tuple;
 using std::shared_ptr;
 using std::unique_ptr;
 using std::nullopt;
@@ -48,6 +49,10 @@ using std::array;
 
 // Namespaces
 namespace fs = std::filesystem;
+
+// Concepts
+template <typename T>
+concept arithmetic = std::is_arithmetic_v<T>;
 
 // Internal headers
 #include "utils/logger.hpp"

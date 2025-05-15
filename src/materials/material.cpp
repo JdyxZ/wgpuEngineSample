@@ -156,7 +156,7 @@ bool Raytracing::Dielectric::scatter(const Ray& incoming_ray, const hit_record& 
 
     // Check if the ray should reflect or refract
     vec3 scattering_direction;
-    if (cannot_refract || reflect_prob > random_double())
+    if (cannot_refract || reflect_prob > random_number<double>())
     {
         scattering_direction = reflect(unit_direction, rec.normal);
         srec.scatter_type = REFLECT;

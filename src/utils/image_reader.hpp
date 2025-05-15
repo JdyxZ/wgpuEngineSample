@@ -3,9 +3,17 @@
 // Headers
 #include "core/core.hpp"
 #include "graphics/texture.h"
+#include "math/vec3.hpp"
 
 namespace Raytracing
 {
+    enum class ImageDataType
+    {
+        UINT8_T,
+        UINT16_T,
+        FLOAT
+    };
+
     class ImageReader
     {
     public:
@@ -25,23 +33,34 @@ namespace Raytracing
         int width()  const;
         int height() const;
 
-        // Loads the linear (gamma=1) image data from the given file name. Returns true if the
-        // load succeeded. The resulting data buffer points to the three RGB [0.0, 1.0]
-        // floating-point values of the first pixel (red, then green, then blue). Pixels are
-        // contiguous, going left to right for the width of the image, followed by the next row
-        // below, for the full height of the image.
+        // Returns true if the load succeeded.
+        // Loads the linear (gamma=1) image data from the given file name.
+        // The resulting data buffer points to the channel values of the first pixel.
+        // Pixels are contiguous, going left to right for the width of the image,
+        // followed by the next row below, for the full height of the image.
         bool load(const string& filename);
-        const uint8_t* pixel_data(int x, int y) const;
+
+        // Reads texture data and returns the address of the three RGB bytes [0.0, 1.0] of the pixel at x,y.
+        // If there is no image data, returns magenta.
+        const color pixel_data(int x, int y) const;
+
+        static uint8_t* convert_float_to_uint8(const float* float_data, size_t count);
+        static uint16_t* convert_float_to_uint16(const float* float_data, size_t count);
 
     private:
-        int             bytes_per_pixel;
-        float*          fdata = nullptr;            // Linear floating point pixel data
-        const uint8_t*  bdata = nullptr;            // Linear 8-bit pixel data
+        bool            is_linear;                  // Is the image linear (gamma = 1) or not (gamma != 1)
+        int             channels;                   // Number of channels (1, 3, 4, etc.)
+        int             bit_depth;                  // Number of bits per channel (8 bits, 16 bits, 32 bits, etc.)
+        ImageDataType   data_type;                  // Data type of the image data based on the bit depth
         int             image_width = 0;            // Loaded image width
         int             image_height = 0;           // Loaded image height
+        const uint8_t*  uint8_data = nullptr;       // Linear 8-bit pixel data
+        const uint16_t* uint16_data = nullptr;      // Linear 16-bit pixel data
+        const float*    float_data = nullptr;       // Linear 32-bit pixel data
+        int             bytes_per_pixel = 0;        
         int             bytes_per_scanline = 0;
 
-        static unsigned char float_to_byte(float value);
-        void convert_to_bytes(); // Converts the linear floating point pixel data to bytes, storing the resulting byte data in the `bdata` member.
+        ImageDataType get_data_type(uint8_t bit_depth) const;
+        Raytracing::ImageDataType get_data_type(const string& filename) const;
     };
 }

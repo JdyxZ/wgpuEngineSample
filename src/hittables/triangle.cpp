@@ -127,8 +127,8 @@ double Triangle::pdf_value(const point3& hit_point, const vec3& scattering_direc
 vec3 Triangle::random_scattering_ray(const point3& hit_point) const
 {
     // Generate random barycentric coordinates
-    auto r1 = random_double();
-    auto r2 = random_double();
+    auto r1 = random_number<double>();
+    auto r2 = random_number<double>();
 
     // Convert to barycentric coordinates
     auto sqrt_r1 = sqrt(r1);

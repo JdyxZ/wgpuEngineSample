@@ -58,8 +58,8 @@ void Raytracing::book1_final_scene_creation(Scene& scene, bool blur_motion)
     {
         for (int b = -11; b < 11; b++)
         {
-            auto choose_mat = random_double();
-            point3 center(a + 0.9 * random_double(), 0.2, b + 0.9 * random_double());
+            auto choose_mat = random_number<double>();
+            point3 center(a + 0.9 * random_number<double>(), 0.2, b + 0.9 * random_number<double>());
 
             if ((center - point3(4, 0.2, 0)).length() > 0.9)
             {
@@ -73,7 +73,7 @@ void Raytracing::book1_final_scene_creation(Scene& scene, bool blur_motion)
 
                     if (blur_motion)
                     {
-                        auto center2 = center + vec3(0, random_double(0, .5), 0);
+                        auto center2 = center + vec3(0, random_number<double>(0, .5), 0);
                         scene.add(make_shared<Sphere>(center, center2, 0.2, sphere_material));
                     }
                     else
@@ -85,7 +85,7 @@ void Raytracing::book1_final_scene_creation(Scene& scene, bool blur_motion)
                 else if (choose_mat < 0.95)
                 {
                     auto albedo = color::random(0.5, 1);
-                    auto fuzz = random_double(0, 0.5);
+                    auto fuzz = random_number<double>(0, 0.5);
                     sphere_material = make_shared<Metal>(albedo, fuzz);
                     scene.add(make_shared<Sphere>(center, 0.2, sphere_material));
                 }
@@ -441,7 +441,7 @@ void Raytracing::book2_final_scene(Scene& scene, Camera& camera, ImageWriter& im
             auto z0 = -1000.0 + j * w;
             auto y0 = 0.0;
             auto x1 = x0 + w;
-            auto y1 = random_double(1, 101);
+            auto y1 = random_number<double>(1, 101);
             auto z1 = z0 + w;
 
             auto box = make_shared<Box>(point3(x0, y0, z0), point3(x1, y1, z1), ground);

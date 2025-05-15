@@ -303,7 +303,7 @@ namespace Raytracing
         return !(A == B);
     }
 
-    // Matrix44 & vec4 operators
+    // Matrix & vec operations
     inline vec4 operator*(const Matrix44& mat, const vec4& v)
     {
         vec4 result;
@@ -311,6 +311,18 @@ namespace Raytracing
         for (int i = 0; i < 4; ++i)
         {
             result[i] = mat[i][0] * v.x + mat[i][1] * v.y + mat[i][2] * v.z + mat[i][3] * v.w;
+        }
+
+        return result;
+    }
+
+    inline vec3 operator*(const Matrix33& mat, const vec3& v)
+    {
+        vec3 result;
+
+        for (int i = 0; i < 3; ++i)
+        {
+            result[i] = mat[i][0] * v.x + mat[i][1] * v.y + mat[i][2] * v.z;
         }
 
         return result;

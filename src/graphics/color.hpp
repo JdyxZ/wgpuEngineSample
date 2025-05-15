@@ -20,14 +20,23 @@ const Raytracing::color GRAY(0.5, 0.5, 0.5);
 const Raytracing::color ORANGE(1.0, 0.65, 0.0);
 const Raytracing::color SKY_BLUE(135.0 / 255.0, 206.0 / 255.0, 235.0 / 255.0);
 
-inline double linear_to_gamma(double linear_component)
+inline double linear_to_gamma(double linear_component, double gamma = 2.2)
 {
-    if (linear_component > 0)
-        return std::sqrt(linear_component);
+    if (linear_component <= 0)
+        return 0;
 
-    return 0;
+    return std::pow(linear_component, 1.0 / gamma);
 }
 
-tuple<uint8_t, uint8_t, uint8_t, uint8_t> compute_color(const Raytracing::color& pixel_color);
+inline double gamma_to_linear(double gamma_component, double gamma = 2.2)
+{
+    if (gamma_component <= 0)
+        return 0;
+
+    return std::pow(gamma_component, gamma);
+}
+
+tuple<uint8_t, uint8_t, uint8_t, uint8_t> compute_LDR_color(const Raytracing::color& pixel_color);
+tuple<double, double, double, double> compute_HDR_color(const color& pixel_color);
 
 

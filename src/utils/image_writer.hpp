@@ -14,7 +14,14 @@ namespace Raytracing
 enum IMAGE_FORMAT
 {
     PNG,
-    JPG
+    JPG,
+    EXR
+};
+
+enum IMAGE_DYNAMIC_RANGE
+{
+    LDR,
+    HDR
 };
 
 namespace Raytracing
@@ -40,20 +47,32 @@ namespace Raytracing
         void initialize(RendererSettings& settings);
 
         void write_pixel(const int pixel_row, const int pixel_column, const tuple<uint8_t, uint8_t, uint8_t, uint8_t> RGBA_color);
+        void write_pixel(const int pixel_row, const int pixel_column, const tuple<float, float, float, float> RGBA_color);
         void save();
 
-        int get_width();
-        int get_height();
-        vector<uint8_t> get_rgb_data();
-        vector<uint8_t> get_rgba_data();
+        int get_width() const;
+        int get_height() const;
+        vector<uint8_t> get_rgb_data() const;
+        vector<uint8_t> get_rgba_data() const;
+        IMAGE_DYNAMIC_RANGE get_dynamic_range() const;
 
     private:
+
+        // LDR data
         vector<uint8_t> data;                   // Image buffer (RGBA format)
+
+        // Separate RGB channels (TinyEXR requires planar format)
+        vector<float> r_data;
+        vector<float> g_data;
+        vector<float> b_data;
+        vector<float> a_data;
+
         int width;                              // Rendered image width in pixel count
         int height;                             // Rendered image height
 
-        bool savePNG(string path);
-        bool saveJPG(string path, int quality);
+        bool savePNG(const string& path);
+        bool saveJPG(const string& path, int quality);
+        bool saveEXR(const string& filename);
     };
 }
 

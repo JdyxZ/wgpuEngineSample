@@ -84,7 +84,7 @@ double hittables_pdf::value(const vec3& scattering_direction) const
 vec3 hittables_pdf::generate() const 
 {
     auto size = int(hittables.size());
-    auto random_object_index = random_int(0, size - 1);
+    auto random_object_index = random_number<int>(0, size - 1);
     return hittables[random_object_index]->random_scattering_ray(hit_point);
 }
 
@@ -101,7 +101,7 @@ double mixture_pdf::value(const vec3& direction) const
 
 vec3 mixture_pdf::generate() const 
 {
-    if (random_double() < 0.5)
+    if (random_number<double>() < 0.5)
         return p[0]->generate();
     else
         return p[1]->generate();

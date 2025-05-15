@@ -141,8 +141,8 @@ pair<double, double> Sphere::get_sphere_uv(const point3& p)
 
 vec3 Sphere::sphere_front_face_random(double radius, double distance_squared)
 {
-    auto r1 = random_double();
-    auto r2 = random_double();
+    auto r1 = random_number<double>();
+    auto r2 = random_number<double>();
     auto phi = 2 * pi * r1;
 
     auto z = 1 + r2 * (std::sqrt(1 - radius * radius / distance_squared) - 1);
