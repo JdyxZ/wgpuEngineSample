@@ -9,6 +9,8 @@
 
 Raytracing::ImageReader::ImageReader(const char* image_filename)
 {
+    // Define image specs
+    image_type = ImageType::LOADED;
     auto filename = string(image_filename);
 
     // Hunt for the image file in some likely locations.
@@ -23,28 +25,11 @@ Raytracing::ImageReader::ImageReader(const char* image_filename)
     Logger::error("ImageReader", "Could not load image file: " + string(image_filename));
 }
 
-Raytracing::ImageReader::ImageReader() {}
-
-Raytracing::ImageReader::~ImageReader()
-{
-    switch (data_type)
-    {
-    case ImageDataType::UINT8_T:
-        delete[] uint8_data;
-        break;
-    case ImageDataType::UINT16_T:
-        delete[] uint16_data;
-        break;
-    case ImageDataType::FLOAT:
-        delete[] float_data;
-        break;
-    }
-}
-
 Raytracing::ImageReader::ImageReader(const sTextureData& tex_data)
 {
     // Set image specs
     is_linear = true; // All textures from framework are linear (assumption)
+    image_type = ImageType::PARSED;
     image_width = tex_data.image_width;
     image_height = tex_data.image_height;
     channels = tex_data.channels;
@@ -53,21 +38,30 @@ Raytracing::ImageReader::ImageReader(const sTextureData& tex_data)
     bit_depth = (bytes_per_pixel / channels) * 8;
 
     // Get image data type
-    ImageDataType data_type = get_data_type(bit_depth);
+    data_type = get_data_type(bit_depth);
 
     // Set proper pointer to point to texture data
     switch (data_type)
     {
     case ImageDataType::UINT8_T:
-        uint8_data = tex_data.data.data();
+        external_uint8_data = tex_data.data.data();
         break;
     case ImageDataType::UINT16_T:
-        uint16_data = reinterpret_cast<const uint16_t*>(tex_data.data.data());
+        external_uint16_data = reinterpret_cast<const uint16_t*>(tex_data.data.data());
         break;
     case ImageDataType::FLOAT:
-        float_data = reinterpret_cast<const float*>(tex_data.data.data());
+        external_float_data = reinterpret_cast<const float*>(tex_data.data.data());
         break;
     }
+}
+
+Raytracing::ImageReader::~ImageReader()
+{
+    // No need to check for nullptr, since deleting nullptr is safe
+    delete[] owned_uint8_data;
+    delete[] owned_uint16_data;
+    stbi_image_free(owned_float_data);
+
 }
 
 bool Raytracing::ImageReader::load(const string& filename)
@@ -80,18 +74,18 @@ bool Raytracing::ImageReader::load(const string& filename)
         return false;
 
     // Get image specs
-    ImageDataType data_type = get_data_type(filename);
+    data_type = get_data_type(filename);
 
     switch (data_type)
     {
     case ImageDataType::UINT8_T:
-        uint8_data = convert_float_to_uint8(float_ptr, image_width * image_height * channels);
+        owned_uint8_data = convert_float_to_uint8(float_ptr, image_width * image_height * channels);
         bytes_per_pixel = sizeof(uint8_t) * channels;
         bit_depth = 8;
         stbi_image_free(float_ptr);
         break;
     case ImageDataType::UINT16_T:
-        uint16_data = convert_float_to_uint16(float_ptr, image_width * image_height * channels);
+        owned_uint16_data = convert_float_to_uint16(float_ptr, image_width * image_height * channels);
         bytes_per_pixel = sizeof(uint16_t) * channels;
         bit_depth = 16;
         stbi_image_free(float_ptr);
@@ -99,10 +93,11 @@ bool Raytracing::ImageReader::load(const string& filename)
     case ImageDataType::FLOAT:
         bytes_per_pixel = sizeof(float) * channels;
         bit_depth = 32;
-        float_data = float_ptr;
+        owned_float_data = float_ptr;
         break;
     }
 
+    is_linear = true; // stbi_loadf returns linearized data (assumption)
     bytes_per_scanline = image_width * bytes_per_pixel;
 
     return true;
@@ -114,7 +109,8 @@ const Raytracing::color Raytracing::ImageReader::pixel_data(int x, int y) const
         return MAGENTA;
 
     if (!is_within(x, 0, image_width, BoundType::inclusive, BoundType::exclusive) ||
-        !is_within(y, 0, image_height, BoundType::inclusive, BoundType::exclusive)) {
+        !is_within(y, 0, image_height, BoundType::inclusive, BoundType::exclusive))
+    {
         Logger::error("IMAGE_READER", std::format("Pixel coordinates ({}, {}) out of bounds", x, y));
         return MAGENTA;
     }
@@ -126,23 +122,22 @@ const Raytracing::color Raytracing::ImageReader::pixel_data(int x, int y) const
     {
     case ImageDataType::UINT8_T:
     {
-        const auto pixel = &uint8_data[index];
+        const auto pixel = image_type == ImageType::LOADED ? &owned_uint8_data[index] : &external_uint8_data[index];
         auto scale = 1.0f / 255.0f;
         pixel_color = vec3(pixel[0], pixel[1], pixel[2]) * scale;
         break;
     }
     case ImageDataType::UINT16_T:
     {
-        const auto pixel = &uint16_data[index];
+        const auto pixel = image_type == ImageType::LOADED ? &owned_uint16_data[index] : &external_uint16_data[index];
         auto scale = 1.0f / 65535.0f;
         pixel_color = vec3(pixel[0], pixel[1], pixel[2]) * scale;
         break;
     }
     case ImageDataType::FLOAT:
     {
-        const auto pixel = &float_data[index];
+        const auto pixel = image_type == ImageType::LOADED ? &owned_float_data[index] : &external_float_data[index];
         pixel_color = vec3(pixel[0], pixel[1], pixel[2]);
-        pixel_color = ToneMapper::ACESFitted(pixel_color);
         break;
     }
     }
@@ -170,7 +165,7 @@ uint16_t* Raytracing::ImageReader::convert_float_to_uint16(const float* float_da
     for (size_t i = 0; i < count; ++i)
     {
         float clamped = std::clamp(float_data[i], 0.0f, 1.0f);
-        result[i] = static_cast<uint16_t>(clamped * 65535.0f + 0.5f);
+        result[i] = static_cast<uint16_t>(clamped * 65535.0f + 0.5f); // +0.5f for rounding
     }
 
     return result;
@@ -186,7 +181,7 @@ int Raytracing::ImageReader::height() const
     return image_height;
 }
 
-Raytracing::ImageDataType Raytracing::ImageReader::get_data_type(uint8_t bit_depth) const
+Raytracing::ImageDataType Raytracing::ImageReader::get_data_type(int bit_depth) const
 {
     if (bit_depth == 8)
         return ImageDataType::UINT8_T;

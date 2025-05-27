@@ -81,7 +81,7 @@ void RayTracingRenderer::resize_window(int width, int height)
         camera.initialize(scene, image);
         camera.render(scene, image);
 
-        screen_texture->update(image.get_rgba_data().data(), 0, {});
+        screen_texture->update(image.get_ubyte_data().data(), 0, {});
         image.save();
     }
 }
@@ -137,7 +137,7 @@ void RayTracingRenderer::render_manual_scene()
     camera.render(scene, image);
 
     // Update framebuffer
-    screen_texture->update(image.get_rgba_data().data(), 0, {});
+    screen_texture->update(image.get_ubyte_data().data(), 0, {});
 
     // Encode and save image with desired format
     image.save();
@@ -166,7 +166,7 @@ void RayTracingRenderer::render_frame(vector<shared_ptr<Raytracing::Mesh>>& mesh
 
     // Init
     scene.initialize(settings);
-    image.initialize();
+    image.initialize(settings);
     camera.initialize(camera_data, scene, image);
 
     // Scene start

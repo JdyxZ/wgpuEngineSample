@@ -13,7 +13,11 @@ public:
     static const Raytracing::Matrix33 ACESOutputMat; // ODT_SAT => XYZ => D60_2_D65 => sRGB
 
     static vec3 RRTAndODTFit(vec3 v);
+
+    // ACES fitted
     static Raytracing::color ACESFitted(Raytracing::color c);
     static tuple<double, double, double> ACESFitted(double r, double g, double b);
-}
 
+    // Reinhard
+    static vec3 Reinhard(vec3 c);
+};

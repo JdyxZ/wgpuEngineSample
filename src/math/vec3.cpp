@@ -149,7 +149,6 @@ bool vec3::is_zero() const
     return (x == 0) && (y == 0) && (z == 0);
 }
 
-
 vec3 vec3::random()
 {
     return vec3(random_number<double>(), random_number<double>(), random_number<double>());
@@ -158,4 +157,9 @@ vec3 vec3::random()
 vec3 vec3::random(double min, double max)
 {
     return vec3(random_number<double>(min, max), random_number<double>(min, max), random_number<double>(min, max));
+}
+
+double vec3::max_component() const
+{
+    return std::max({ x, y, z });
 }

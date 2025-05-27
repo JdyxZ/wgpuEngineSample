@@ -7,9 +7,11 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #define __STDC_LIB_EXT1__
 #define TINYEXR_IMPLEMENTATION
+#define TINYEXR_USE_MINIZ 0
 
 // External Headers
 #include "external/stb_image_write.hpp"
+#include "zlib.h"
 #include "external/tinyexr.h"
 
 // Usings
@@ -27,16 +29,55 @@ Raytracing::ImageWriter::ImageWriter(int width, int height)
 
 void Raytracing::ImageWriter::initialize()
 {
+    // Validate image attributes
+    switch (format)
+    {
+    case JPG:
+        if (pixel_type == GRAYSCALE_ALPHA)
+        {
+            Logger::warn("ImageWriter", "JPG format does not support alpha channel. Using GRAYSCALE instead.");
+            pixel_type = GRAYSCALE;
+        }
+        if (pixel_type == RGBA)
+        {
+            Logger::warn("ImageWriter", "JPG format does not support alpha channel. Using RGB instead.");
+            pixel_type = RGB; 
+        }
+
+        quality = std::clamp(quality, 1, 100);
+        break;
+
+    case EXR_16:
+    case EXR_32:
+
+        if (pixel_type == GRAYSCALE_ALPHA)
+        {
+            Logger::warn("ImageWriter", "EXR format does not support grayscale alpha pixel types. Using Grayscale instead");
+            pixel_type = GRAYSCALE;
+        }
+        break;
+    }
+
     // Set image extension
     switch (format)
     {
-    case PNG:
+    case PNG_8:
         format_str = ".png";
+        precision = 8;
+        break;
+    case PNG_16:
+        format_str = ".png"; 
+        precision = 16;       
         break;
     case JPG:
+        precision = 8; 
         format_str = ".jpg";
         break;
-    case EXR:
+    case EXR_16:
+        precision = 16;
+        format_str = ".exr";
+        break;
+    case EXR_32:
         precision = 32;
         format_str = ".exr";
         break;
@@ -49,19 +90,8 @@ void Raytracing::ImageWriter::initialize()
     fs::create_directories(output_destination);
 
     // Reserve space for image data pointer
-    auto dynamic_range = get_dynamic_range();
-    switch (dynamic_range)
-    {
-    case IMAGE_DYNAMIC_RANGE::LDR:
-        data.reserve(4 * width * height);
-        break;
-    case IMAGE_DYNAMIC_RANGE::HDR:
-        r_data.reserve(width * height);
-        g_data.reserve(width * height);
-        b_data.reserve(width * height);
-        // a_data.reserve(width * height);
-        break;
-    }
+    int num_channels = get_num_channels();
+    data.resize(num_channels * width * height);
 
     // Log info
     Logger::info("ImageWriter", "Image frame succesfully initialized.");
@@ -76,34 +106,37 @@ void Raytracing::ImageWriter::initialize(RendererSettings& settings)
     initialize();
 }
 
-void Raytracing::ImageWriter::write_pixel(const int pixel_row, const int pixel_column, const tuple<uint8_t, uint8_t, uint8_t, uint8_t> RGBA_color)
+void Raytracing::ImageWriter::write_pixel(const int pixel_row, const int pixel_column, const tuple<float, float, float, float> color_tuple)
 {
     // Determine pixel position in image buffer
-    int pixel_position = 4 * (width * pixel_row + pixel_column);
+    int num_channels = get_num_channels();
+    int pixel_position = num_channels * (width * pixel_row + pixel_column);
 
     // Unwrap color components
-    auto [r, g, b, a] = RGBA_color;
+    auto [r, g, b, a] = color_tuple;
 
     // Write color info to data buffer
-    data[pixel_position + 0] = r;
-    data[pixel_position + 1] = g;
-    data[pixel_position + 2] = b;
-    data[pixel_position + 3] = a;
-}
-
-void Raytracing::ImageWriter::write_pixel(const int pixel_row, const int pixel_column, const tuple<float, float, float, float> RGBA_color)
-{
-    // Determine pixel position in image buffer
-    int pixel_position = 4 * (width * pixel_row + pixel_column);
-
-    // Unwrap color components
-    auto [r, g, b, a] = RGBA_color;
-
-    // Write each color components in each color channel vector
-    r_data[pixel_position] = r;
-    g_data[pixel_position] = g;
-    b_data[pixel_position] = b;
-    // a_data[pixel_position] = a;
+    switch (pixel_type)
+    {
+    case GRAYSCALE:
+        data[pixel_position + 0] = r;  // Three first channels are the same (r = g = b), so we can take r as the grayscale value
+        break;
+    case GRAYSCALE_ALPHA:
+        data[pixel_position + 0] = r;  // Three first channels are the same (r = g = b), so we can take r as the grayscale value
+        data[pixel_position + 1] = a;  
+        break;
+    case RGB:
+        data[pixel_position + 0] = r;
+        data[pixel_position + 1] = g;
+        data[pixel_position + 2] = b;
+        break;
+    case RGBA:
+        data[pixel_position + 0] = r;
+        data[pixel_position + 1] = g;
+        data[pixel_position + 2] = b;
+        data[pixel_position + 3] = a;
+        break;
+    }
 }
 
 void Raytracing::ImageWriter::save()
@@ -125,14 +158,16 @@ void Raytracing::ImageWriter::save()
 
     switch (format)
     {
-    case PNG:
+    case PNG_8:
+    case PNG_16:
         success = savePNG(image_path);
         break;
     case JPG:
         success = saveJPG(image_path, quality);
         break;
-    case EXR:
-        success = saveEXR(image_path);
+    case EXR_16:
+    case EXR_32:
+        success = saveEXRcustom(image_path);
         break;
     }
 
@@ -156,112 +191,196 @@ int Raytracing::ImageWriter::get_height() const
     return height;
 }
 
-vector<uint8_t> Raytracing::ImageWriter::get_rgb_data() const
+int Raytracing::ImageWriter::get_precision() const
 {
-    if (get_dynamic_range() == IMAGE_DYNAMIC_RANGE::HDR)
-    {
-        string error = Logger::error("ImageWriter", "Cannot use the rgb data function with HDR image output");
-        throw std::runtime_error(error);
-    }
-
-    vector<uint8_t> rgb_data;
-    rgb_data.reserve(width * height * 3);
-
-    for (size_t i = 0; i < data.size(); i += 4)
-    {
-        rgb_data.push_back(data[i]);        // R
-        rgb_data.push_back(data[i + 1]);    // G
-        rgb_data.push_back(data[i + 2]);    // B
-                                            // Skip A
-    }
-
-    return rgb_data;
+    return precision;
 }
 
-vector<uint8_t> Raytracing::ImageWriter::get_rgba_data() const
+vector<uint8_t> Raytracing::ImageWriter::get_ubyte_data() const
 {
-    if (get_dynamic_range() == IMAGE_DYNAMIC_RANGE::HDR)
-    {
-        string error = Logger::error("ImageWriter", "Cannot use the rgba data function with HDR image output");
-        throw std::runtime_error(error);
-    }
+    vector<uint8_t> ubyte_data(data.size());
 
+    for (size_t i = 0; i < data.size(); ++i)
+        ubyte_data[i] = static_cast<uint8_t>(std::clamp(data[i], 0.0f, 1.0f) * 255.0f);
+
+    return ubyte_data;
+}
+
+vector<uint16_t> Raytracing::ImageWriter::get_ushort_data() const
+{
+    vector<uint16_t> ushort_data(data.size());
+
+    for (size_t i = 0; i < data.size(); ++i)
+        ushort_data[i] = static_cast<uint16_t>(std::clamp(data[i], 0.0f, 1.0f) * 65535.0f);
+
+    return ushort_data;
+}
+
+vector<float> Raytracing::ImageWriter::get_float_data() const
+{
     return data;
+}
+
+vector<vector<float>> Raytracing::ImageWriter::get_planar_data() const
+{
+    int num_channels = get_num_channels();
+    size_t num_pixels = data.size() / num_channels; // This is equivalent to width * height
+
+    vector<vector<float>> planar_data(num_channels);
+
+    // Reserve space
+    for (size_t i = 0; i < num_channels; ++i)
+        planar_data[i].reserve(num_pixels);
+
+    // Fill planar data
+    for (size_t i = 0; i < data.size(); i++)
+        planar_data[i % num_channels].push_back(data[i]);
+
+    return planar_data;
 }
 
 IMAGE_DYNAMIC_RANGE Raytracing::ImageWriter::get_dynamic_range() const
 {
-    precision == 8 ? IMAGE_DYNAMIC_RANGE::LDR : IMAGE_DYNAMIC_RANGE::HDR;
+    return format == EXR_16 || format == EXR_32 ? IMAGE_DYNAMIC_RANGE::HDR : IMAGE_DYNAMIC_RANGE::LDR;
+}
+
+int Raytracing::ImageWriter::get_num_channels() const
+{
+    switch (pixel_type)
+    {
+    case GRAYSCALE:
+        return 1;
+    case GRAYSCALE_ALPHA:
+        return 2;
+    case RGB:
+        return 3;
+    case RGBA:
+        return 4;
+    }
+
+    return 0;
 }
 
 bool Raytracing::ImageWriter::savePNG(const string& path)
 {
-    int channels = 4; // RGBA
-    int success = stbi_write_png(path.c_str(), width, height, channels, data.data(), width * channels);
+    bool success = false;
+    int channels = get_num_channels();
+
+    if (format == PNG_8)
+    {
+        auto ubyte_data = get_ubyte_data();
+        success = stbi_write_png(path.c_str(), width, height, channels, ubyte_data.data(), width * channels * sizeof(uint8_t));
+    }
+    else if (format == PNG_16)
+    {
+        auto ushort_data = get_ushort_data();
+        success = stbi_write_png(path.c_str(), width, height, channels, ushort_data.data(), width * channels * sizeof(uint16_t));
+    }
+
     return success;
 }
 
 bool Raytracing::ImageWriter::saveJPG(const string& path, int quality)
 {
-    int channels = 3; // RGB
-    auto data = get_rgb_data();
-    int success = stbi_write_jpg(path.c_str(), width, height, channels, data.data(), quality);
+    int channels = get_num_channels();
+    auto ubyte_data = get_ubyte_data();
+
+    bool success = stbi_write_jpg(path.c_str(), width, height, channels, ubyte_data.data(), quality);
     return success;
 }
 
 bool Raytracing::ImageWriter::saveEXR(const string& path)
 {
-    // Define number of channels
-    int num_channels = 3;
+    int num_channels = get_num_channels();
+    bool save_as_fp16 = (format == EXR_16) ? 1 : 0;
 
-    // Assuming you have alpha data stored in a vector<float> a_data;
-    float* images_RGB[4] = { r_data.data(), g_data.data(), b_data.data() };
-    float* images_RGBA[4] = { r_data.data(), g_data.data(), b_data.data(), a_data.data() };
+    const char** err = nullptr;
+    bool success = ::SaveEXR(data.data(), width, height, num_channels, save_as_fp16, path.c_str(), err);
 
-    EXRHeader header;
-    InitEXRHeader(&header);
+    if (success != TINYEXR_SUCCESS)
+    {
+        if (err)
+        {
+            Logger::error("ImageWriter", "TinyEXR Error: " + string(*err));
+            FreeEXRErrorMessage(*err);
+        }
 
-    EXRImage exr_image;
-    InitEXRImage(&exr_image);
+        return false;
+    }
+
+    return true;
+}
+
+bool Raytracing::ImageWriter::saveEXRcustom(const string& path)
+{  
+    // Get number of channels
+    int num_channels = get_num_channels();
+
+    // Get image planar data
+    auto planar_data = get_planar_data();
+
+    // The order of the channels must be (A)BGR since most of EXR viewers expect this channel order.
+    std::reverse(planar_data.begin(), planar_data.end());
+
+    // Convert to float pointer array
+    vector<float*> image_ptr(num_channels); 
+    for (int i = 0; i < num_channels; ++i)
+        image_ptr[i] = planar_data[i].data();
+
+    EXRHeader header; InitEXRHeader(&header);
+    EXRImage exr_image; InitEXRImage(&exr_image);
 
     exr_image.num_channels = num_channels;
-    exr_image.images = num_channels == 3 ? (unsigned char**)images_RGB : (unsigned char**)images_RGBA; // Cast array of float* to unsigned char**
+    exr_image.images = (unsigned char**)image_ptr.data();
     exr_image.width = width;
     exr_image.height = height;
 
-    // Channel names in B, G, R, A order (important)
+    // Allocate space for each channel
+    vector<EXRChannelInfo> channels(num_channels);
+    header.channels = channels.data();
     header.num_channels = num_channels;
-    header.channels = (EXRChannelInfo*)malloc(sizeof(EXRChannelInfo) * header.num_channels);
-    strncpy(header.channels[0].name, "B", 255);
-    strncpy(header.channels[1].name, "G", 255);
-    strncpy(header.channels[2].name, "R", 255);
-    if(num_channels == 4) strncpy(header.channels[3].name, "A", 255);
 
-    // Pixel types arrays (input and output types)
-    header.pixel_types = (int*)malloc(sizeof(int) * header.num_channels);
-    header.requested_pixel_types = (int*)malloc(sizeof(int) * header.num_channels);
-
-    for (int i = 0; i < num_channels; ++i)
+    switch (pixel_type)
     {
-        header.pixel_types[i] = TINYEXR_PIXELTYPE_FLOAT;        // input pixels are floats
-        header.requested_pixel_types[i] = TINYEXR_PIXELTYPE_FLOAT; // store as float in EXR
+    case GRAYSCALE:
+        strncpy_s(header.channels[0].name, "Y", 255); 
+        break;
+    case GRAYSCALE_ALPHA:
+        return false;
+    case RGB:
+        strncpy_s(header.channels[0].name, "B", 255); 
+        strncpy_s(header.channels[1].name, "G", 255); 
+        strncpy_s(header.channels[2].name, "R", 255); 
+        break;
+    case RGBA:
+        strncpy_s(header.channels[0].name, "A", 255); 
+        strncpy_s(header.channels[1].name, "B", 255);
+        strncpy_s(header.channels[2].name, "G", 255); 
+        strncpy_s(header.channels[3].name, "R", 255); 
+        break;
     }
 
-    // Set compression method here (e.g., ZIP_COMPRESSION)
-    // header.compression_type = TINYEXR_COMPRESSION_ZIP; 
+    // Define input/ouput pixel bit depth
+    vector<int> pixel_types(num_channels, TINYEXR_PIXELTYPE_FLOAT);
+    vector<int> requested_pixel_types(num_channels, format == EXR_16 ? TINYEXR_PIXELTYPE_HALF : TINYEXR_PIXELTYPE_FLOAT);
+    header.pixel_types = pixel_types.data();
+    header.requested_pixel_types = requested_pixel_types.data();
 
-    const char* err = nullptr;
-    int result = SaveEXRImageToFile(&exr_image, &header, path.c_str(), &err);
+    // Set compression method
+    // header.compression_type = TINYEXR_COMPRESSIONTYPE_ZIP;
+    header.compression_type = TINYEXR_COMPRESSIONTYPE_PIZ;
 
-    free(header.channels);
-    free(header.pixel_types);
-    free(header.requested_pixel_types);
+    const char* err = nullptr; 
+    int success = SaveEXRImageToFile(&exr_image, &header, path.c_str(), &err);
 
-    if (result != TINYEXR_SUCCESS) {
-        if (err) {
-            fprintf(stderr, "TinyEXR Error: %s\n", err);
+    if (success != TINYEXR_SUCCESS)
+    {
+        if (err)
+        {
+            Logger::error("ImageWriter", "TinyEXR Error: " + string(err));
             FreeEXRErrorMessage(err);
         }
+
         return false;
     }
 

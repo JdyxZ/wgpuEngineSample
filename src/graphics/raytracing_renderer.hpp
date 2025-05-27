@@ -28,7 +28,7 @@ namespace Raytracing
         ImVec4 secondary_blend_color = ImVec4(float(SKY_BLUE.x), float(SKY_BLUE.y), float(SKY_BLUE.z), 1.0);
 
         // Output              
-        IMAGE_FORMAT format = PNG;
+        IMAGE_FORMAT format = PNG_8;
         int quality = 100;
         string image_path = output_path;
     };

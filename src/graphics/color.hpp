@@ -4,6 +4,9 @@
 #include "math/vec3.hpp"
 #include "core/core.hpp"
 
+// Forward declarations
+enum IMAGE_DYNAMIC_RANGE;
+
 // Colors
 const Raytracing::color RED(1.0, 0.0, 0.0);
 const Raytracing::color GREEN(0.0, 1.0, 0.0);
@@ -36,7 +39,6 @@ inline double gamma_to_linear(double gamma_component, double gamma = 2.2)
     return std::pow(gamma_component, gamma);
 }
 
-tuple<uint8_t, uint8_t, uint8_t, uint8_t> compute_LDR_color(const Raytracing::color& pixel_color);
-tuple<double, double, double, double> compute_HDR_color(const color& pixel_color);
+tuple<float, float, float, float> compute_color(const Raytracing::color& pixel_color, IMAGE_DYNAMIC_RANGE dynamic_range);
 
 

@@ -67,8 +67,8 @@ color Raytracing::ImageTexture::value(optional<pair<double, double>> texture_coo
         return CYAN;
 
     // Clamp input texture coordinates to [0,1] x [1,0]
-    u = Interval::unitary.clamp(u);
-    v = 1.0 - Interval::unitary.clamp(v);  // Flip V to image coordinates
+    u = std::clamp(u, 0.0, 1.0);
+    v = 1.0 - std::clamp(v, 0.0, 1.0);  // Flip V to image coordinates
 
     // Get pixel location
     auto i = int(u * image->width());

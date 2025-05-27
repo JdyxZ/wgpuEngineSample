@@ -48,6 +48,8 @@ public:
     static vec3 random();
     static vec3 random(double min, double max);
 
+    double max_component() const;
+
 };
 
 inline vec3 operator+(const vec3& u, const vec3& v)

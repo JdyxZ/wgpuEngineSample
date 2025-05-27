@@ -160,8 +160,9 @@ void RayTracingEngine::render_gui()
                 // Generate frame
                 renderer->render_frame(meshes, settings);
 
+                int x = 10;
                 // Update render status
-                is_raytracer_rendering = true;
+                // is_raytracer_rendering = true;
             }
 
             if (is_raytracer_rendering)

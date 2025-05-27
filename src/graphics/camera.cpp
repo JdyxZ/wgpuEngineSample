@@ -83,6 +83,9 @@ void Raytracing::Camera::render(Scene& scene, ImageWriter& image)
     // Log info
     Logger::info("CAMERA", "Rendering started.");
 
+    // Get image's dynamic range
+    auto dynamic_range = image.get_dynamic_range();
+
     // Calculate primary rays to cast
     primary_rays = image.get_width() * image.get_height() * pixel_sample_sqrt * pixel_sample_sqrt;
 
@@ -117,29 +120,11 @@ void Raytracing::Camera::render(Scene& scene, ImageWriter& image)
             // Avarage samples
             pixel_color /= scene.samples_per_pixel;
 
-            // Compute and write color depending on the dynamic range
-            auto dynamic_range = image.get_dynamic_range();
-            switch (dynamic_range)
-            {
-                case (LDR) :
-                {
-                    // Compute color
-                    auto RGBA_color = compute_LDR_color(pixel_color);
+            // Compute color
+            auto color_tuple = compute_color(pixel_color, dynamic_range);
 
-                    // Save pixel color into image buffer (row-major order)
-                    image.write_pixel(pixel_row, pixel_column, RGBA_color);
-                }
-                case (HDR):
-                {
-                    // Compute color
-                    auto RGBA_color = compute_HDR_color(pixel_color);
-
-                    // Save pixel color into image buffer (row-major order)
-                    image.write_pixel(pixel_row, pixel_column, RGBA_color);
-                }
-            }
-
-
+            // Save pixel color into image buffer (row-major order)
+            image.write_pixel(pixel_row, pixel_column, color_tuple);
 
             // Update progress
             // #pragma omp atomic
@@ -275,11 +260,23 @@ color Raytracing::Camera::ray_color(const Ray& sample_ray, int depth, const Scen
         // Update reflecting rays count
         reflected_rays++;
 
+        // === Russian Roulette ===
+        /*
+        double rr_probability = 1;
+        if (depth >= 3)
+        {
+            rr_probability = std::clamp(srec.attenuation.max_component(), 0.1, 1.0);
+            if (random_number<double>() > rr_probability)
+                return color_from_emission;
+        }
+        */
+
         // Recursive call
         color sample_color = ray_color(scattered, depth - 1, scene);
 
         // Bidirectional Reflectance Distribution Function (BRDF)
-        color_from_scatter = (srec.attenuation * scattering_pdf_value * sample_color) / sampling_pdf_value;
+        // color_from_scatter = (srec.attenuation * scattering_pdf_value * sample_color) / (sampling_pdf_value * rr_probability);
+        color_from_scatter = (srec.attenuation * scattering_pdf_value * sample_color) / (sampling_pdf_value);
 
         // Combine scatter and emission colors
         return color_from_emission + color_from_scatter;

@@ -100,7 +100,7 @@ void LogWriter::write(const Scene& scene, const Camera& camera, ImageWriter& ima
     log << "## Image 🖼️\n\n";
     log << "**Name:** `" << image.full_name << "`  \n";
     log << "**Resolution:** " << image.get_width() << "x" << image.get_height() << "  \n";
-    log << "**Color precision:** " << image.precision << " bits  \n";
+    log << "**Color precision:** " << image.get_precision() << " bits  \n";
     log << "**File Size:** " << image.size.amount << " " << image.size.unit << "  \n";
     log << "**Encoding Time:** " << image.encoding_chrono.elapsed_to_string() << " \n\n";
 

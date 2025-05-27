@@ -13,15 +13,25 @@ namespace Raytracing
 
 enum IMAGE_FORMAT
 {
-    PNG,
+    PNG_8,
+    PNG_16,
     JPG,
-    EXR
+    EXR_16,
+    EXR_32
 };
 
 enum IMAGE_DYNAMIC_RANGE
 {
     LDR,
     HDR
+};
+
+enum IMAGE_PIXEL_TYPE
+{
+    GRAYSCALE,          // 1 channel
+    GRAYSCALE_ALPHA,    // 2 channels
+    RGB,                // 3 channels
+    RGBA,               // 4 channels
 };
 
 namespace Raytracing
@@ -32,9 +42,9 @@ namespace Raytracing
         string name;                                // Image name
         string full_name;                           // Image name + extension
         IMAGE_FORMAT format = JPG;                  // Image format
+        IMAGE_PIXEL_TYPE pixel_type = RGB;          // Image pixel type
         string format_str;                          // Image extension string
         string output_destination = output_path;    // Output path for the image
-        int precision = 8;                          // Bit precision of the output image
         int quality = 100;                          // Only for JPG images
         double aspect_ratio;                        // Ratio of image width over height
         file_size size;                             // Output image file size
@@ -46,33 +56,34 @@ namespace Raytracing
         void initialize();
         void initialize(RendererSettings& settings);
 
-        void write_pixel(const int pixel_row, const int pixel_column, const tuple<uint8_t, uint8_t, uint8_t, uint8_t> RGBA_color);
-        void write_pixel(const int pixel_row, const int pixel_column, const tuple<float, float, float, float> RGBA_color);
+        void write_pixel(const int pixel_row, const int pixel_column, const tuple<float, float, float, float> color_tuple);
         void save();
 
         int get_width() const;
         int get_height() const;
-        vector<uint8_t> get_rgb_data() const;
-        vector<uint8_t> get_rgba_data() const;
+
+        int get_precision() const;
+
+        vector<uint8_t> get_ubyte_data() const;
+        vector<uint16_t> get_ushort_data() const;
+        vector<float> get_float_data() const;
+        vector<vector<float>> get_planar_data() const; // For TinyEXR support
+
         IMAGE_DYNAMIC_RANGE get_dynamic_range() const;
+        int get_num_channels() const;
 
     private:
 
-        // LDR data
-        vector<uint8_t> data;                   // Image buffer (RGBA format)
-
-        // Separate RGB channels (TinyEXR requires planar format)
-        vector<float> r_data;
-        vector<float> g_data;
-        vector<float> b_data;
-        vector<float> a_data;
+        vector<float> data;                     // Image buffer
+        int precision = 8;                      // Bit precision of the output image
 
         int width;                              // Rendered image width in pixel count
         int height;                             // Rendered image height
 
         bool savePNG(const string& path);
         bool saveJPG(const string& path, int quality);
-        bool saveEXR(const string& filename);
+        bool saveEXR(const string& path);
+        bool saveEXRcustom(const string& path);
     };
 }
 

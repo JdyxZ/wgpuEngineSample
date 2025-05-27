@@ -12,7 +12,7 @@ namespace Raytracing
     {
     public:
         // Constructors & Destructor
-        Matrix(unsigned num_rows, unsigned num_columns, double initial = 0.0);
+        Matrix(unsigned num_rows, unsigned num_columns, double initial = 0);
         virtual ~Matrix() = default;
 
         // Matrix Operations

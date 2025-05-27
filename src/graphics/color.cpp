@@ -8,12 +8,13 @@
 // Usings
 using Raytracing::color;
 
-tuple<uint8_t, uint8_t, uint8_t, uint8_t> compute_LDR_color(const color& pixel_color)
+tuple<float, float, float, float> compute_LDR_color(const color& pixel_color)
 {
     // Unwrap the color components
     auto r = pixel_color.x;
     auto g = pixel_color.y;
     auto b = pixel_color.z;
+    float a = 1;
 
     // Replace NaN components with zero to kill shadow acne
     if (r != r) r = 0.0;
@@ -21,21 +22,20 @@ tuple<uint8_t, uint8_t, uint8_t, uint8_t> compute_LDR_color(const color& pixel_c
     if (b != b) b = 0.0;
 
     // Apply tone mapper to map HDR to LDR
-    auto [r, g, b] = ToneMapper::ACESFitted(r, g, b);
+    auto [rc, gc, bc] = ToneMapper::ACESFitted(r, g, b);
+
+    // Clamp negative values to 0 to avoid NaNs when applying linear to gamma conversion
+    r = std::max(0.0, rc);
+    g = std::max(0.0, gc);
+    b = std::max(0.0, bc);
 
     // Apply a linear to gamma transform for gamma 2
     r = linear_to_gamma(r);
     g = linear_to_gamma(g);
     b = linear_to_gamma(b);
 
-    // Translate the [0,1] component values to the byte range [0,255].
-    static const Interval intensity(0.000, 0.999);
-    uint8_t red_byte = static_cast<uint8_t>(256 * intensity.clamp(r));
-    uint8_t green_byte = static_cast<uint8_t>(256 * intensity.clamp(g));
-    uint8_t blue_byte = static_cast<uint8_t>(256 * intensity.clamp(b));
-    uint8_t alpha = 1;
-
-    return { red_byte, green_byte, blue_byte, alpha };
+    // Return mapped, converted and clamped colors
+    return { static_cast<float>(r), static_cast<float>(g), static_cast<float>(b), a };
 }
 
 tuple<float, float, float, float> compute_HDR_color(const color& pixel_color)
@@ -44,7 +44,7 @@ tuple<float, float, float, float> compute_HDR_color(const color& pixel_color)
     auto r = pixel_color.x;
     auto g = pixel_color.y;
     auto b = pixel_color.z;
-    double a = 1;
+    float a = 1;
 
     // Replace NaN components with zero to kill shadow acne
     if (r != r) r = 0.0;
@@ -52,5 +52,18 @@ tuple<float, float, float, float> compute_HDR_color(const color& pixel_color)
     if (b != b) b = 0.0;
 
     // Since output image is in HDR format, no need to apply transformations to color
-    return { static_cast<float>(r), static_cast<float>(g), static_cast<float>(b), static_cast<float>(a) };
+    return { static_cast<float>(r), static_cast<float>(g), static_cast<float>(b), a};
+}
+
+tuple<float, float, float, float> compute_color(const color& pixel_color, IMAGE_DYNAMIC_RANGE dynamic_range)
+{
+    switch (dynamic_range)
+    {
+    case(IMAGE_DYNAMIC_RANGE::LDR):
+        return compute_LDR_color(pixel_color);
+    case(IMAGE_DYNAMIC_RANGE::HDR):
+        return compute_HDR_color(pixel_color);
+    }
+
+    return { static_cast<float>(MAGENTA.x), static_cast<float>(MAGENTA.y), static_cast<float>(MAGENTA.z), 1.0f }; // Fallback color in case of error
 }
