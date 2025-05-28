@@ -6,6 +6,7 @@
 // Framework Headers
 #include "engine/engine.h"
 
+// Forward declaration
 class Node3D;
 
 class RayTracingEngine : public Engine

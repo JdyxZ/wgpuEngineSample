@@ -14,6 +14,7 @@
 
 // Framework headers
 #include "framework/nodes/mesh_instance_3d.h"
+#include "framework/nodes/environment_3d.h"
 #include "framework/camera/camera.h"
 
 // Usings
@@ -24,24 +25,34 @@ using Raytracing::Lambertian;
 using Raytracing::color;
 using Raytracing::normal;
 using Raytracing::CameraData;
+using Raytracing::SkyboxTexture;
 
-vector<shared_ptr<Mesh>> parse_nodes(const vector<Node*>& nodes, const bool use_bvh)
+ParsedScene parse_nodes(const vector<Node*>& nodes, const bool use_bvh)
 {
+    ParsedScene parsed_scene;
     vector<shared_ptr<Mesh>> meshes;
 
     for (auto node : nodes)
     {
-        auto node_meshes = parse_node(node, use_bvh);
+        // Skip skybox node
+        if (node->get_node_type() == "Environment3D")
+            continue;
+
+        auto parsed_node = parse_node(node, use_bvh);
+        auto node_meshes = parsed_node.meshes;
 
         if (!node_meshes.empty())
             meshes.insert(meshes.end(), node_meshes.begin(), node_meshes.end());
     }
 
-    return meshes;
+    parsed_scene = ParsedScene{ meshes };
+
+    return parsed_scene;
 }
 
-vector<shared_ptr<Mesh>> parse_node(Node* node, const bool use_bvh)
+ParsedNode parse_node(Node* node, const bool use_bvh)
 {
+    ParsedNode parsed_node;
     vector<shared_ptr<Mesh>> meshes;
 
     std::function<void(Node*)> parse = [&](Node* node)
@@ -82,7 +93,26 @@ vector<shared_ptr<Mesh>> parse_node(Node* node, const bool use_bvh)
 
     parse(node);
 
-    return meshes;
+    parsed_node = ParsedNode{ meshes };
+
+    return parsed_node;
+}
+
+SkyboxTexture* parse_skybox(Environment3D* skybox)
+{
+    // Get skybox texture
+    Texture* skybox_texture = skybox->get_surface(0)->get_material()->get_diffuse_texture();
+
+    if (!skybox_texture)
+    {
+        Logger::warn("Raytracing", "Skybox texture is not set for the Environment3D node.");
+        return nullptr;
+    }
+
+    sTextureData& texture_data = skybox_texture->get_texture_data();
+    auto parsed_skybox_texture = new SkyboxTexture(texture_data);
+
+    return parsed_skybox_texture;
 }
 
 shared_ptr<Raytracing::Surface> parse_surface(Surface* surface, const Raytracing::Matrix44& mesh_model, const bool use_bvh)

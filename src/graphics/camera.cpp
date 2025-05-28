@@ -9,6 +9,7 @@
 #include "graphics/color.hpp"
 #include "math/interval.hpp"
 #include "materials/material.hpp"
+#include "materials/texture.hpp"
 #include "hittables/triangle.hpp"
 #include "graphics/raytracing_renderer.hpp"
 
@@ -19,15 +20,17 @@
 using Raytracing::Scene;
 using Raytracing::ImageWriter;
 using Raytracing::color;
-using Raytracing::CameraData;
+using Raytracing::RendererSettings;
 
 Raytracing::Camera::Camera()
 {
     render_chrono = Chrono();
 }
 
-void Raytracing::Camera::initialize(CameraData& data, const Scene& scene, ImageWriter& image)
+void Raytracing::Camera::initialize(const RendererSettings& settings, const Scene& scene, ImageWriter& image)
 {
+    CameraData data = settings.camera_data;
+
     vertical_fov = data.vertical_fov;
     defocus_angle = data.defocus_angle;
     focus_distance = data.focus_distance;
@@ -182,7 +185,7 @@ color Raytracing::Camera::ray_color(const Ray& sample_ray, int depth, const Scen
     if (!scene.hit(sample_ray, ray_t, hrec))
     {
         background_rays++;
-        return scene.sky_blend ? sky_blend(scene, sample_ray) : scene.background;
+        return compute_background_color(scene, sample_ray);
     }
 
     // Hit object type
@@ -261,42 +264,70 @@ color Raytracing::Camera::ray_color(const Ray& sample_ray, int depth, const Scen
         reflected_rays++;
 
         // === Russian Roulette ===
-        /*
         double rr_probability = 1;
-        if (depth >= 3)
+        if (scene.russian_roulette)
         {
-            rr_probability = std::clamp(srec.attenuation.max_component(), 0.1, 1.0);
-            if (random_number<double>() > rr_probability)
-                return color_from_emission;
+            if (depth >= 3)
+            {
+                rr_probability = std::clamp(srec.attenuation.max_component(), 0.1, 1.0);
+                if (random_number<double>() > rr_probability)
+                    return color_from_emission;
+            }
         }
-        */
 
         // Recursive call
         color sample_color = ray_color(scattered, depth - 1, scene);
 
         // Bidirectional Reflectance Distribution Function (BRDF)
-        // color_from_scatter = (srec.attenuation * scattering_pdf_value * sample_color) / (sampling_pdf_value * rr_probability);
-        color_from_scatter = (srec.attenuation * scattering_pdf_value * sample_color) / (sampling_pdf_value);
+        if (scene.russian_roulette)
+            color_from_scatter = (srec.attenuation * scattering_pdf_value * sample_color) / (sampling_pdf_value * rr_probability);
+        else
+            color_from_scatter = (srec.attenuation * scattering_pdf_value * sample_color) / (sampling_pdf_value);
 
         // Combine scatter and emission colors
         return color_from_emission + color_from_scatter;
     }
     default: // Unknown hit
         unknwon_rays++;
-        return scene.sky_blend ? sky_blend(scene, sample_ray) : scene.background;
+        return compute_background_color(scene, sample_ray);
     }
 }
 
-color Raytracing::Camera::sky_blend(const Scene& scene, const Ray& r) const
+Raytracing::color Raytracing::Camera::compute_background_color(const Scene& scene, const Ray& sample_ray) const
 {
-    vec3 unit_direction = unit_vector(r.direction());
+    switch (scene.background_type)
+    {
+    case BACKGROUND_TYPE::STATIC_COLOR:
+    {
+        return scene.background;
+    }
+    case BACKGROUND_TYPE::GRADIENT:
+    {
+        vec3 unit_direction = unit_vector(sample_ray.direction());
 
-    auto a = 0.5 * (unit_direction.y + 1.0);
-    color start_color = scene.background_primary;
-    color end_color = scene.background_secondary;
+        auto a = 0.5 * (unit_direction.y + 1.0);
+        color start_color = scene.background_primary;
+        color end_color = scene.background_secondary;
 
-    return lerp(a, start_color, end_color);
+        return lerp(a, start_color, end_color);
+    }
+    case BACKGROUND_TYPE::SKYBOX:
+    {
+        if (!scene.skybox)
+        {
+            string error = Logger::error("CAMERA", "Skybox background option is set but scene does not contain a skybox texture");
+            throw std::runtime_error(error);
+        }
+
+        vec3 unit_direction = unit_vector(sample_ray.direction()); // necessary ???
+        return scene.skybox->value(unit_direction);
+    }
+        
+    default:
+        return scene.background; // Fallback to background color
+    }
 }
+
 
 optional<color> Raytracing::Camera::barycentric_color_interpolation(const hit_record& rec, Triangle* t) const
 {

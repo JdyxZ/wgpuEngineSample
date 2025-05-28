@@ -97,7 +97,7 @@ void Raytracing::ImageWriter::initialize()
     Logger::info("ImageWriter", "Image frame succesfully initialized.");
 }
 
-void Raytracing::ImageWriter::initialize(RendererSettings& settings)
+void Raytracing::ImageWriter::initialize(const RendererSettings& settings)
 {
     format = settings.format;
     quality = settings.quality;

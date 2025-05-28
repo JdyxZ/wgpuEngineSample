@@ -8,29 +8,35 @@
 #include "scenes.hpp"
 #include "hittables/bvh.hpp"
 #include "graphics/raytracing_renderer.hpp"
+#include "materials/texture.hpp"
 
 // Usings
 using Raytracing::RendererSettings;
+using Raytracing::SkyboxTexture;
 
 Raytracing::Scene::Scene()
 {
     bbox = original_bbox = Raytracing::AABB::empty();
 }
 
-void Raytracing::Scene::initialize(RendererSettings& settings)
+void Raytracing::Scene::initialize(const RendererSettings& settings)
 {
-    auto bc = settings.background_color;
-    auto cp = settings.primary_blend_color;
-    auto cs = settings.primary_blend_color;
-
+    // Settings
     this->bounce_max_depth = settings.bounce_max_depth;
     this->min_hit_distance = settings.min_hit_distance;
     this->bvh_optimization = settings.bvh_optimization;
     this->samples_per_pixel = settings.samples_per_pixel;
-    this->sky_blend = settings.sky_blend;
+
+    auto bc = settings.background_color;
+    auto cp = settings.primary_blend_color;
+    auto cs = settings.primary_blend_color;
+
+    // Background
+    this->background_type = settings.background_type;
     this->background = color(bc.x, bc.y, bc.z);
     this->background_primary = color(cp.x, cp.y, cp.z);
     this->background_secondary = color(cs.x, cs.y, cs.z);
+    this->skybox = settings.skybox;
 }
 
 void Raytracing::Scene::start()

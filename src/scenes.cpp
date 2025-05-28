@@ -266,7 +266,7 @@ void Raytracing::simple_light(Scene& scene, Camera& camera, ImageWriter& image)
 
     // Scene settings
     scene.name = "Simple Light";
-    scene.sky_blend = false;
+    scene.background_type = BACKGROUND_TYPE::STATIC_COLOR;
     scene.bounce_max_depth = 50;
     scene.samples_per_pixel = 100;
 
@@ -301,7 +301,7 @@ void Raytracing::cornell_box(Scene& scene, Camera& camera, ImageWriter& image)
 
     // Scene settings
     scene.name = "Cornell Box";
-    scene.sky_blend = false;
+    scene.background_type = BACKGROUND_TYPE::STATIC_COLOR;
     scene.bounce_max_depth = 10;
     scene.samples_per_pixel = 50;
 
@@ -359,7 +359,7 @@ void Raytracing::cornell_smoke(Scene& scene, Camera& camera, ImageWriter& image)
 
     // Scene settings
     scene.name = "Cornell Smoke";
-    scene.sky_blend = false;
+    scene.background_type = BACKGROUND_TYPE::STATIC_COLOR;
     scene.bounce_max_depth = 50;
     scene.samples_per_pixel = 200;
 
@@ -409,7 +409,7 @@ void Raytracing::book2_final_scene(Scene& scene, Camera& camera, ImageWriter& im
 
     // Scene settings
     scene.name = "Book 2 Final Scene";
-    scene.sky_blend = false;
+    scene.background_type = BACKGROUND_TYPE::STATIC_COLOR;
     scene.bounce_max_depth = 40;
     scene.samples_per_pixel = 100;
     int boxes_per_side = 20;
@@ -511,7 +511,7 @@ void Raytracing::obj_test(Scene& scene, Camera& camera, ImageWriter& image)
 
     // Scene settings
     scene.name = "OBJ test";
-    scene.sky_blend = true;
+    scene.background_type = BACKGROUND_TYPE::GRADIENT;
     scene.bounce_max_depth = 5;
     scene.samples_per_pixel = 10;
 

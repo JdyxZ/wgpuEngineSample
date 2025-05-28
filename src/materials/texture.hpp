@@ -51,6 +51,19 @@ namespace Raytracing
         const shared_ptr<Texture>& odd;
     };
 
+    class NoiseTexture : public Texture
+    {
+    public:
+        NoiseTexture(double scale, int depth = 7);
+
+        color value(optional<pair<double, double>> texture_coordinates, const point3& p) const override;
+
+    private:
+        shared_ptr<Perlin> noise;
+        double scale = 1;
+        int depth = 7;
+    };
+
     class ImageTexture : public Texture
     {
     public:
@@ -66,17 +79,17 @@ namespace Raytracing
         const pair<WGPUAddressMode, WGPUAddressMode> uv_wrap_modes = make_pair(WGPUAddressMode_Undefined, WGPUAddressMode_Undefined);
     };
 
-    class NoiseTexture : public Texture
+    class SkyboxTexture
     {
     public:
-        NoiseTexture(double scale, int depth = 7);
+        SkyboxTexture(const char* filename);
+        SkyboxTexture(string filename);
+        SkyboxTexture(const sTextureData& data);
 
-        color value(optional<pair<double, double>> texture_coordinates, const point3& p) const override;
+        color value(const vec3& ray_direction) const;
 
     private:
-        shared_ptr<Perlin> noise;
-        double scale = 1;
-        int depth = 7;
+        shared_ptr<ImageReader> skybox;
     };
 }
 

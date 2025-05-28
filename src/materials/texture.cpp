@@ -36,6 +36,16 @@ color Raytracing::CheckerTexture::value(optional<pair<double, double>> texture_c
     return isEven ? even->value(texture_coordinates, p) : odd->value(texture_coordinates, p);
 }
 
+Raytracing::NoiseTexture::NoiseTexture(double scale, int depth) : scale(scale), depth(depth)
+{
+    noise = make_shared<Perlin>();
+}
+
+color Raytracing::NoiseTexture::value(optional<pair<double, double>> texture_coordinates, const point3& p) const
+{
+    return color(.5, .5, .5) * (1 + std::sin(scale * p.z + 10 * noise->turbulance(p, depth)));
+}
+
 Raytracing::ImageTexture::ImageTexture(const char* filename)
 {
     image = make_shared<ImageReader>(filename);
@@ -85,12 +95,32 @@ pair<WGPUAddressMode, WGPUAddressMode> Raytracing::ImageTexture::get_uv_wrap_mod
     return uv_wrap_modes;
 }
 
-Raytracing::NoiseTexture::NoiseTexture(double scale, int depth) : scale(scale), depth(depth)
+Raytracing::SkyboxTexture::SkyboxTexture(const char* filename)
 {
-    noise = make_shared<Perlin>();
+    skybox = make_shared<ImageReader>(filename);
 }
 
-color Raytracing::NoiseTexture::value(optional<pair<double, double>> texture_coordinates, const point3& p) const
+Raytracing::SkyboxTexture::SkyboxTexture(string filename)
 {
-    return color(.5, .5, .5) * (1 + std::sin(scale * p.z + 10 * noise->turbulance(p, depth)));
+    skybox = make_shared<ImageReader>(filename.c_str());
+}
+
+Raytracing::SkyboxTexture::SkyboxTexture(const sTextureData& data)
+{
+    skybox = make_shared<ImageReader>(data);
+}
+
+color Raytracing::SkyboxTexture::value(const vec3& ray_direction) const
+{
+    // Get hemispherical coordinates from ray direction
+    double theta = atan2(ray_direction.z, ray_direction.x);
+    double phi = acos(std::clamp(ray_direction.y, -1.0, 1.0));
+
+    // Convert hemispherical coordinates to UV coordinates
+    double u = (theta + Raytracing::pi) / (2.0f * Raytracing::pi);
+    double v = phi / Raytracing::pi;
+
+    color pixel_color = skybox->pixel_data(int(u * (skybox->width() - 1)), int(v * (skybox->height() - 1)));
+
+    return pixel_color;
 }

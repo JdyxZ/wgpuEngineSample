@@ -15,6 +15,7 @@ namespace Raytracing
 {
     class Scene;
     class ImageWriter;
+    struct RendererSettings;
 }
 
 namespace Raytracing
@@ -65,8 +66,8 @@ namespace Raytracing
 
         Camera();
 
-        void initialize(CameraData& data, const Scene& scene, ImageWriter& image);
-        void initialize(const Raytracing::Scene& scene, ImageWriter& image);
+        void initialize(const Raytracing::RendererSettings& settings, const Scene& scene, ImageWriter& image);
+        void initialize(const Raytracing::Scene& scene, ImageWriter& image); 
         void render(Raytracing::Scene& scene, ImageWriter& image);
 
     private:
@@ -86,7 +87,7 @@ namespace Raytracing
 
         const Ray get_ray_sample(int pixel_row, int pixel_column, int sample_row, int sample_column) const; // Construct a camera ray originating from the defocus disk and directed at randomly sampled point around the pixel location pixel_row, pixel_column for stratified sample square sample_row, sample_column.
         Raytracing::color ray_color(const Ray& sample_ray, int depth, const Raytracing::Scene& scene);
-        Raytracing::color sky_blend(const Scene& scene, const Ray& r) const;
+        Raytracing::color compute_background_color(const Raytracing::Scene& scene, const Ray& sample_ray) const;
         optional<Raytracing::color> barycentric_color_interpolation(const hit_record& rec, Triangle* t) const;
 
     };

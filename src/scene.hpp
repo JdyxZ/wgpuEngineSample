@@ -14,7 +14,15 @@ namespace Raytracing
     class ImageWriter;
     struct RendererSettings;
     class Mesh;
+    class SkyboxTexture;
 }
+
+enum class BACKGROUND_TYPE
+{
+    STATIC_COLOR,
+    GRADIENT,
+    SKYBOX,
+};
 
 namespace Raytracing
 {
@@ -26,20 +34,23 @@ namespace Raytracing
         string name;
 
         // Ray scattering settings
-        int bounce_max_depth = 10;              // Maximum number of ray bounces into scene
-        double min_hit_distance = 0.001;        // Greatly solves shadow acne
+        int bounce_max_depth = 10;                                          // Maximum number of ray bounces into scene
+        double min_hit_distance = 0.001;                                    // Greatly solves shadow acne
 
         // Optimizations
-        bool bvh_optimization = true;           // Enables BVH acceleration structure for raytracing
+        bool bvh_optimization = true;                                       // Enables BVH acceleration structure for raytracing
+        bool russian_roulette = true;                                       // Enables Russian Roulette for raytracing
+        bool parallel_computing = true;                                     // Enables parallel computation throguh OpenMP for raytracing
 
         // Antialiasing and noise settings
-        int samples_per_pixel = 10;             // Count of random samples for each pixel
+        int samples_per_pixel = 10;                                         // Count of random samples for each pixel
 
-        // Scene background color
-        bool sky_blend = true;                  // Enables a background sky gradient
-        color background = BLACK;               // Scene background color
-        color background_primary = WHITE;       // Sky gradient primary color
-        color background_secondary = SKY_BLUE;  // Sky gradient secondary color
+        // Background
+        BACKGROUND_TYPE background_type = BACKGROUND_TYPE::STATIC_COLOR;    // Enables a background sky gradient
+        color background = BLACK;                                           // Scene background color
+        color background_primary = WHITE;                                   // Sky gradient primary color
+        color background_secondary = SKY_BLUE;                              // Sky gradient secondary color
+        Raytracing::SkyboxTexture* skybox = nullptr;                        // Skybox texture of the background
 
         // Hittable object
         shared_ptr<Hittable> scene_hittable = nullptr;
@@ -63,7 +74,7 @@ namespace Raytracing
         Scene();
 
         // Methods
-        void initialize(RendererSettings& settings);
+        void initialize(const RendererSettings& settings);
         void start();
         void end();
 

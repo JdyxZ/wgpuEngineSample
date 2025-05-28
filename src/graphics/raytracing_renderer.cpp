@@ -5,7 +5,6 @@
 #include "graphics/camera.hpp"
 #include "utils/image_writer.hpp"
 #include "utils/log_writer.hpp"
-#include "utils/project_parsers.hpp"
 
 // Framework Headers
 #include "glm/gtx/norm.hpp"
@@ -21,6 +20,7 @@ using Raytracing::Scene;
 using Raytracing::ImageWriter;
 using Raytracing::RendererSettings;
 using Raytracing::CameraData;
+using Raytracing::SkyboxTexture;
 
 RayTracingRenderer::RayTracingRenderer(const sRendererConfiguration& config) : Renderer(config) {}
 
@@ -33,14 +33,17 @@ int RayTracingRenderer::initialize()
 {
     int error_code = Renderer::initialize();
 
-    clear_color = glm::vec4(0.22f, 0.22f, 0.22f, 1.0);
-
     return error_code;
 }
 
 int RayTracingRenderer::post_initialize()
 {
     Renderer::post_initialize();
+
+    clear_color = glm::vec4(0.22f, 0.22f, 0.22f, 1.0);
+
+    Texture* irradiance = RendererStorage::get_texture("data/textures/environments/sky.hdr", TEXTURE_STORAGE_STORE_DATA);
+    set_irradiance_texture(irradiance);
 
     return 0;
 }
@@ -149,25 +152,24 @@ void RayTracingRenderer::render_manual_scene()
     log.write(scene, camera, image);
 }
 
-void RayTracingRenderer::render_frame(vector<shared_ptr<Raytracing::Mesh>>& meshes, RendererSettings& settings)
+void RayTracingRenderer::render_frame(const ParsedScene& parsed_scene, const RendererSettings& settings)
 {
+    // Unwrap parsed scene 
+    auto meshes = parsed_scene.meshes;
+
     // Create scene
     Scene scene;
 
     // Create camera
     Raytracing::Camera camera;
-    Camera* framework_camera = Renderer::get_camera();
-    CameraData camera_data = parse_camera_data(framework_camera);
 
     // Create image
-    ImageWriter image;
-    WebGPUContext* webgpu_context = Renderer::get_webgpu_context();
-    image = ImageWriter(webgpu_context->screen_width, webgpu_context->screen_height);
+    ImageWriter image = ImageWriter(settings.screen_width, settings.screen_height);
 
     // Init
-    scene.initialize(settings);
     image.initialize(settings);
-    camera.initialize(camera_data, scene, image);
+    scene.initialize(settings);
+    camera.initialize(settings, scene, image);
 
     // Scene start
     scene.start();

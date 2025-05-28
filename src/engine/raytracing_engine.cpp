@@ -3,6 +3,8 @@
 #include "raytracing_engine.hpp"
 #include "utils/project_parsers.hpp"
 #include "utils/utilities.hpp"
+#include "materials/texture.hpp"
+#include "graphics/camera.hpp"
 
 // Framework Headers
 #include "framework/nodes/environment_3d.h"
@@ -11,6 +13,9 @@
 #include "framework/parsers/parse_gltf.h"
 #include "engine/scene.h"
 #include "framework/utils/tinyfiledialogs.h"
+
+// Usings
+using Raytracing::SkyboxTexture;
 
 int RayTracingEngine::initialize(Renderer* renderer, sEngineConfiguration configuration)
 {
@@ -58,7 +63,15 @@ void RayTracingEngine::create_scene()
     main_scene = new Scene("main_scene");
     vector<Node*> scene_nodes;
 
-    // Parse models
+    // Create scene environment (background)
+    Environment3D* skybox = new Environment3D();
+    main_scene->add_node(skybox);
+
+    // Parse skybox
+    SkyboxTexture* skybox_texture = parse_skybox(skybox);
+    settings.skybox = skybox_texture;
+
+    // Parse scene models
     GltfParser gltf_parser;
     gltf_parser.parse("models/github_assets/Cube/glTF/Cube.gltf", scene_nodes, PARSE_GLTF_FILL_SURFACE_DATA);
     // gltf_parser.parse("models/github_assets/CarbonFibre/glTF-Binary/CarbonFibre.glb", scene_nodes, PARSE_GLTF_FILL_SURFACE_DATA);
@@ -74,8 +87,13 @@ void RayTracingEngine::render_gui()
 {
     // Aux vars
     bool active = true;
-    WebGPUContext* webgpu_context = Renderer::instance->get_webgpu_context();
+
+    // Get webgpu context
+    WebGPUContext* webgpu_context = renderer->get_webgpu_context();
+
+    // Enum names
     vector<const char*> image_format_names = get_enum_names<IMAGE_FORMAT>();
+    vector<const char*> background_type_names = get_enum_names<BACKGROUND_TYPE>();
 
     // Set window position
     float panel_width = webgpu_context->screen_width * 0.20f; // 20% of screen width
@@ -108,17 +126,34 @@ void RayTracingEngine::render_gui()
             ImGui::SliderInt("Max Bounce Depth", &settings.bounce_max_depth, 1, 1000);
             ImGui::SliderFloat("Min Hit Distance", &settings.min_hit_distance, 0.001f, 10.0f);
             ImGui::SliderInt("Samples per Pixel", &settings.samples_per_pixel, 1, 1000);
-            ImGui::Checkbox("BVH Optimization", &settings.bvh_optimization);
+
+            ImGui::NewLine();
+
+            // === OPTIMIZATIONS ===
+            ImGui::Checkbox("BVH", &settings.bvh_optimization);
+            ImGui::Checkbox("Russian Roulette", &settings.russian_roulette);
+            ImGui::Checkbox("Parallel Computation", &settings.parallel_computing);
 
             ImGui::NewLine();
 
             // === BACKGROUND SETTINGS ===
             ImGui::Text("Background");
 
-            ImGui::Checkbox("Sky Blend", &settings.sky_blend);
-            ImGui::ColorEdit3("Primary Blend Color", (float*)&settings.primary_blend_color);
-            ImGui::ColorEdit3("Secondary Blend Color", (float*)&settings.secondary_blend_color);
-            ImGui::ColorEdit3("Background Color", (float*)&settings.background_color);
+            ImGui::Combo("Type", (int*)&settings.background_type, background_type_names.data(), int(background_type_names.size()));
+
+            switch (settings.background_type)
+            {
+            case BACKGROUND_TYPE::STATIC_COLOR:
+                ImGui::ColorEdit3("Color", (float*)&settings.background_color);
+                break;
+            case BACKGROUND_TYPE::GRADIENT:
+                ImGui::ColorEdit3("Primary Blend Color", (float*)&settings.primary_blend_color);
+                ImGui::ColorEdit3("Secondary Blend Color", (float*)&settings.secondary_blend_color);
+                break;
+            case BACKGROUND_TYPE::SKYBOX:
+                // TO BE IMPLEMENTED
+                break;
+            }
 
             ImGui::NewLine();
 
@@ -152,17 +187,25 @@ void RayTracingEngine::render_gui()
             ImGui::Text("Generate");
 
             if (ImGui::Button("Render"))
-            {
+            {                
                 // Parse scene nodes to meshes for raytracer
                 vector<Node*> scene_nodes = main_scene->get_nodes();
-                vector<shared_ptr<Raytracing::Mesh>> meshes = parse_nodes(scene_nodes, settings.bvh_optimization);
+                ParsedScene parsed_scene = parse_nodes(scene_nodes, settings.bvh_optimization);
+
+                // Parse camera data
+                Camera* engine_camera = renderer->get_camera();
+                settings.camera_data = parse_camera_data(engine_camera);
+
+                // Get screen dimensions
+                WebGPUContext* webgpu_context = renderer->get_webgpu_context();
+                settings.screen_width = webgpu_context->screen_width;
+                settings.screen_height = webgpu_context->screen_height;
 
                 // Generate frame
-                renderer->render_frame(meshes, settings);
+                renderer->render_frame(parsed_scene, settings);
 
-                int x = 10;
                 // Update render status
-                // is_raytracer_rendering = true;
+                is_raytracer_rendering = true;
             }
 
             if (is_raytracer_rendering)

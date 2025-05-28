@@ -54,7 +54,7 @@ namespace Raytracing
         ImageWriter(int width, int height);
 
         void initialize();
-        void initialize(RendererSettings& settings);
+        void initialize(const RendererSettings& settings);
 
         void write_pixel(const int pixel_row, const int pixel_column, const tuple<float, float, float, float> color_tuple);
         void save();
