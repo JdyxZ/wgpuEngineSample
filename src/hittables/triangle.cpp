@@ -28,7 +28,7 @@ Triangle::Triangle(vertex A, vertex B, vertex C, const shared_ptr<Material>& mat
     if (normal.length() < kEpsilon)
     {
         string error = Logger::error("TRIANGLE", "Triangle vertices are colinear");
-        throw std::runtime_error(error);
+        // throw std::runtime_error(error);
     }
 
     set_bbox();

@@ -73,11 +73,11 @@ void RayTracingEngine::create_scene()
 
     // Parse scene models
     GltfParser gltf_parser;
-    gltf_parser.parse("models/github_assets/Cube/glTF/Cube.gltf", scene_nodes, PARSE_GLTF_FILL_SURFACE_DATA);
+    // gltf_parser.parse("models/github_assets/Cube/glTF/Cube.gltf", scene_nodes, PARSE_GLTF_FILL_SURFACE_DATA);
     // gltf_parser.parse("models/github_assets/CarbonFibre/glTF-Binary/CarbonFibre.glb", scene_nodes, PARSE_GLTF_FILL_SURFACE_DATA);
     // gltf_parser.parse("models/github_assets/DamagedHelmet/glTF-Binary/DamagedHelmet.glb", scene_nodes, PARSE_GLTF_FILL_SURFACE_DATA);
     // gltf_parser.parse("models/github_assets/Avocado/glTF-Binary/Avocado.glb", scene_nodes, PARSE_GLTF_FILL_SURFACE_DATA);
-    // gltf_parser.parse("models/github_assets/Corset/glTF-Binary/Corset.glb", scene_nodes, PARSE_GLTF_FILL_SURFACE_DATA);
+    gltf_parser.parse("models/github_assets/Corset/glTF-Binary/Corset.glb", scene_nodes, PARSE_GLTF_FILL_SURFACE_DATA);
 
     // Add models to scene
     main_scene->add_nodes(scene_nodes);

@@ -22,7 +22,7 @@ tuple<float, float, float, float> compute_LDR_color(const color& pixel_color)
     if (b != b) b = 0.0;
 
     // Apply tone mapper to map HDR to LDR
-    auto [rc, gc, bc] = ToneMapper::ACESFitted(r, g, b);
+    auto [rc, gc, bc] = ToneMapper::khronos_pbr_neutral(r, g, b);
 
     // Clamp negative values to 0 to avoid NaNs when applying linear to gamma conversion
     r = std::max(0.0, rc);

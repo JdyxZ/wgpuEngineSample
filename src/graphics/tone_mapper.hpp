@@ -20,4 +20,8 @@ public:
 
     // Reinhard
     static vec3 Reinhard(vec3 c);
+
+    // Kronos PBR Neutral
+    static vec3 khronos_pbr_neutral(const vec3& color);
+    static tuple<double, double, double> khronos_pbr_neutral(double r, double g, double b);
 };

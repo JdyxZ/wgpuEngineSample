@@ -78,7 +78,7 @@ color Raytracing::ImageTexture::value(optional<pair<double, double>> texture_coo
 
     // Clamp input texture coordinates to [0,1] x [1,0]
     u = std::clamp(u, 0.0, 1.0);
-    v = 1.0 - std::clamp(v, 0.0, 1.0);  // Flip V to image coordinates
+    v = std::clamp(v, 0.0, 1.0);  // Flip V to image coordinates
 
     // Get pixel location
     auto i = int(u * image->width());
@@ -113,7 +113,7 @@ Raytracing::SkyboxTexture::SkyboxTexture(const sTextureData& data)
 color Raytracing::SkyboxTexture::value(const vec3& ray_direction) const
 {
     // Get hemispherical coordinates from ray direction
-    double theta = atan2(ray_direction.z, ray_direction.x);
+    double theta = atan2(ray_direction.x, ray_direction.z);
     double phi = acos(std::clamp(ray_direction.y, -1.0, 1.0));
 
     // Convert hemispherical coordinates to UV coordinates
