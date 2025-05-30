@@ -1,7 +1,6 @@
 // Raytracing Headers
 #include "core/core.hpp"
 #include "raytracing_engine.hpp"
-#include "utils/project_parsers.hpp"
 #include "utils/utilities.hpp"
 #include "materials/texture.hpp"
 #include "graphics/camera.hpp"
@@ -16,6 +15,7 @@
 
 // Usings
 using Raytracing::SkyboxTexture;
+using Raytracing::RendererSettings;
 
 int RayTracingEngine::initialize(Renderer* renderer, sEngineConfiguration configuration)
 {
@@ -132,7 +132,7 @@ void RayTracingEngine::render_gui()
             // === OPTIMIZATIONS ===
             ImGui::Checkbox("BVH", &settings.bvh_optimization);
             ImGui::Checkbox("Russian Roulette", &settings.russian_roulette);
-            ImGui::Checkbox("Parallel Computation", &settings.parallel_computing);
+            ImGui::Checkbox("Parallel Computation", &settings.parallelize);
 
             ImGui::NewLine();
 
@@ -186,11 +186,27 @@ void RayTracingEngine::render_gui()
             // === GENERATE ===
             ImGui::Text("Generate");
 
+            bool is_rendering = renderer->is_rendering.load();
+
+            if (is_rendering)
+            {
+                // Apply a faded style and disable the button
+                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f); // Make it look faded
+                ImGui::BeginDisabled(true); // Disable interaction
+            }
+
             if (ImGui::Button("Render"))
-            {                
+            {
+                // Just in case: If previous thread exists and is joinable, join it before starting a new one
+                if (render_jthread.joinable())
+                {
+                    render_jthread.request_stop(); // Request stop just in case
+                    render_jthread.join();         // Wait for it to finish
+                }
+
                 // Parse scene nodes to meshes for raytracer
                 vector<Node*> scene_nodes = main_scene->get_nodes();
-                ParsedScene parsed_scene = parse_nodes(scene_nodes, settings.bvh_optimization);
+                shared_ptr<ParsedScene> parsed_scene = parse_nodes(scene_nodes, settings.bvh_optimization);
 
                 // Parse camera data
                 Camera* engine_camera = renderer->get_camera();
@@ -201,43 +217,58 @@ void RayTracingEngine::render_gui()
                 settings.screen_width = webgpu_context->screen_width;
                 settings.screen_height = webgpu_context->screen_height;
 
-                // Generate frame
-                renderer->render_frame(parsed_scene, settings);
+                // Start rendering params
+                renderer->is_rendering = true;
+                renderer->render_progress = 0.0f;
 
-                // Update render status
-                is_raytracer_rendering = true;
+                // Start rendering thread
+                render_jthread = std::jthread
+                (
+                    &RayTracingRenderer::render_frame_async,    // Render function pointer
+                    renderer,                                   // Pointer to the RayTracingRenderer instance
+                    parsed_scene,                               // Scene data
+                    settings                                    // Render settings
+                );
+
+                // No need to detach/join manually (unless starting a new one)    
             }
 
-            if (is_raytracer_rendering)
+            if (is_rendering)
             {
-                ImGui::Text("Progress");
+                ImGui::EndDisabled();    // Re-enable interaction for subsequent widgets
+                ImGui::PopStyleVar();    // Restore alpha
+            }
 
-                // Log progress status
-                float progress = std::min(RayTracingRenderer::render_progress, 1.0f);
+            ImGui::SameLine();
+
+            if (is_rendering)
+            {
+                // Cancel button
+                if (ImGui::Button("Cancel"))
+                {
+                    if (render_jthread.joinable())
+                    {
+                        render_jthread.request_stop(); // Use jthread's cancellation
+                    }
+
+                }
+
+                // Get progress status
+                float progress = std::clamp(renderer->render_progress.load(), 0.0f, 1.0f);
+
+                // Covert progress to percentage string with 2 decimals
+                string percentage = std::format("{:.2f}%", progress * 100);
+
+                // Define progress bar size
                 ImVec2 bar_size(0.0f, 0.0f);  // Let the bar auto-size to fit the container
-                std::stringstream ss;
-                ss << std::fixed << std::setprecision(2) << progress * 100.0f;
-                std::string percentage_str = ss.str();
-                const char* percentage = percentage_str.c_str();
+                // ImVec2 bar_size(ImGui::GetContentRegionAvail().x * 0.7f, 0.0f); 
 
+                // Push progress bar
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5, 5));
                 ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5.0f);  // Rounded corners for the bar
                 ImGui::SameLine();
-                ImGui::ProgressBar(progress, bar_size, percentage);
+                ImGui::ProgressBar(progress, bar_size, percentage.c_str());
                 ImGui::PopStyleVar(2); // Pop both styling variables
-
-                // RayTracingRenderer::render_progress += 0.0001f;
-                if (RayTracingRenderer::render_progress >= 1.0f)
-                {
-                    is_raytracer_rendering = false;
-                    RayTracingRenderer::render_progress = 0.0f;
-                }
-            }
-
-            if (!RayTracingRenderer::last_render_image.empty())
-            {
-                string txt = "Last render: " + RayTracingRenderer::last_render_image;
-                ImGui::Text(txt.c_str());
             }
 
             ImGui::EndTabItem();

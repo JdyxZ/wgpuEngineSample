@@ -27,9 +27,9 @@ using Raytracing::normal;
 using Raytracing::CameraData;
 using Raytracing::SkyboxTexture;
 
-ParsedScene parse_nodes(const vector<Node*>& nodes, const bool use_bvh)
+shared_ptr<ParsedScene> parse_nodes(const vector<Node*>& nodes, const bool use_bvh)
 {
-    ParsedScene parsed_scene;
+    shared_ptr<ParsedScene> parsed_scene;
     vector<shared_ptr<Mesh>> meshes;
 
     for (auto node : nodes)
@@ -45,7 +45,7 @@ ParsedScene parse_nodes(const vector<Node*>& nodes, const bool use_bvh)
             meshes.insert(meshes.end(), node_meshes.begin(), node_meshes.end());
     }
 
-    parsed_scene = ParsedScene{ meshes };
+    parsed_scene = make_shared<ParsedScene>(meshes);
 
     return parsed_scene;
 }

@@ -36,6 +36,7 @@ public:
 private:
 
     static vector<LogMessage> _messages;
+    static std::mutex logger_mutex; // Add a mute to synchronize threads
 
     static LogMessage new_message(log_message_type type, string& location, string& description);
 };

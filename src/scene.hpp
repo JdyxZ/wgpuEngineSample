@@ -40,7 +40,7 @@ namespace Raytracing
         // Optimizations
         bool bvh_optimization = true;                                       // Enables BVH acceleration structure for raytracing
         bool russian_roulette = true;                                       // Enables Russian Roulette for raytracing
-        bool parallel_computing = true;                                     // Enables parallel computation throguh OpenMP for raytracing
+        bool parallelize = true;                                     // Enables parallel computation throguh OpenMP for raytracing
 
         // Antialiasing and noise settings
         int samples_per_pixel = 10;                                         // Count of random samples for each pixel
@@ -82,8 +82,8 @@ namespace Raytracing
         void clear();
         size_t size() const;
 
-        void build(Camera& camera, ImageWriter& image);
-        void build(vector<shared_ptr<Mesh>> meshes);
+        void build(Camera& camera, ImageWriter& image); // Manual scene
+        void build(vector<shared_ptr<Mesh>> meshes); // WebGPU scene
 
         bool hit(const Ray& r, const Interval& ray_t, hit_record& rec) const override;
 

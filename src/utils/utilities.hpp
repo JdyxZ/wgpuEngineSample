@@ -57,19 +57,44 @@ constexpr double radians_to_degrees(double radians)
 }
 
 template<arithmetic T>
-T random_number(T min = T(0), T max = T(1)) // Returns a random T in [min,max).
+inline T random_number()     // This function is thread safe
 {
-    static std::mt19937 generator(std::random_device{}());
+    thread_local static std::mt19937 generator
+    (
+        std::random_device{}() ^ // XORing with thread ID hash for better uniqueness
+        static_cast<unsigned int>(std::hash<std::thread::id>{}(std::this_thread::get_id()))
+    );
 
     if constexpr (std::is_integral_v<T>)
     {
-        std::uniform_int_distribution<T> distribution(min, max);
-        return distribution(generator);
+        static std::uniform_int_distribution<T> distribution(0, 1);
+        return distribution(generator); // Returns a random T in [0, 1].
+    }
+    else
+    {
+        static std::uniform_real_distribution<T> distribution(0, 1);
+        return distribution(generator); // Returns a random T in [0, 1).
+    }
+}
+
+template<arithmetic T>
+inline T random_number(T min = T(0), T max = T(1))  // This function is thread safe
+{
+    thread_local static std::mt19937 generator
+    (
+        std::random_device{}() ^ // XORing with thread ID hash for better uniqueness
+        static_cast<unsigned int>(std::hash<std::thread::id>{}(std::this_thread::get_id()))
+    );
+
+    if constexpr (std::is_integral_v<T>)
+    {
+        std::uniform_int_distribution<T> distribution(min, max); 
+        return distribution(generator); // Returns a random T in [min,max].
     }
     else
     {
         std::uniform_real_distribution<T> distribution(min, max);
-        return distribution(generator);
+        return distribution(generator); // Returns a random T in [min,max).
     }
 }
 

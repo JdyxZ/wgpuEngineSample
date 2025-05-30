@@ -27,7 +27,7 @@ Raytracing::Camera::Camera()
     render_chrono = Chrono();
 }
 
-void Raytracing::Camera::initialize(const RendererSettings& settings, const Scene& scene, ImageWriter& image)
+void Raytracing::Camera::initialize(const RendererSettings& settings, std::atomic<float>* render_progress, const Scene& scene, ImageWriter& image)
 {
     CameraData data = settings.camera_data;
 
@@ -38,6 +38,8 @@ void Raytracing::Camera::initialize(const RendererSettings& settings, const Scen
     lookfrom = data.lookfrom;
     lookat = data.lookat;
     world_up = data.world_up;
+
+    this->render_progress = render_progress;
 
     initialize(scene, image);
 }
@@ -81,25 +83,26 @@ void Raytracing::Camera::initialize(const Scene& scene, ImageWriter& image)
     Logger::info("CAMERA", "Camera settings succesfully initialized.");
 }
 
-void Raytracing::Camera::render(Scene& scene, ImageWriter& image)
+void Raytracing::Camera::render(const Scene& scene, ImageWriter& image, std::stop_token s_token)
 {
+    // Set number of threads for parallel computing
+    int max_threads = omp_get_max_threads();
+    int threads_to_use = std::max(1, max_threads - 1); // Leave 1 core free
+    omp_set_num_threads(threads_to_use);
+
     // Log info
-    Logger::info("CAMERA", "Rendering started.");
+    Logger::info("CAMERA", "Rendering started with " + std::to_string(threads_to_use) + " threads.");
 
-    // Get image's dynamic range
+    // Aux vars
     auto dynamic_range = image.get_dynamic_range();
-
-    // Calculate primary rays to cast
-    primary_rays = image.get_width() * image.get_height() * pixel_sample_sqrt * pixel_sample_sqrt;
+    uint32_t total_pixels = image.get_height() * image.get_width();
+    uint32_t progress = 0;
 
     // Start render chrono
     render_chrono.start();
 
-    // Progress counter
-    uint32_t progress = 0;
-
     // Stratified sample square
-    // #pragma omp parallel for collapse(2)
+    #pragma omp parallel for schedule(dynamic, 1) if(scene.parallelize)
     for (int pixel_row = 0; pixel_row < image.get_height(); pixel_row++)
     {
         for (int pixel_column = 0; pixel_column < image.get_width(); pixel_column++)
@@ -112,11 +115,15 @@ void Raytracing::Camera::render(Scene& scene, ImageWriter& image)
             {
                 for (int sample_column = 0; sample_column < pixel_sample_sqrt; sample_column++)
                 {
+                    // Skip execution check
+                    if (s_token.stop_requested())
+                        continue;
+
                     // Get ray sample around pixel location
                     auto sample_ray = get_ray_sample(pixel_row, pixel_column, sample_row, sample_column);
 
                     // Get pixel color of the sample point that ray sample points to
-                    pixel_color += ray_color(sample_ray, scene.bounce_max_depth, scene);
+                    pixel_color += ray_color(sample_ray, scene.bounce_max_depth, scene, s_token);
                 }
             }
 
@@ -129,15 +136,19 @@ void Raytracing::Camera::render(Scene& scene, ImageWriter& image)
             // Save pixel color into image buffer (row-major order)
             image.write_pixel(pixel_row, pixel_column, color_tuple);
 
-            // Update progress
-            // #pragma omp atomic
+            // Update progress atomically
+            #pragma omp atomic update
                 progress++;
         }
 
-        // Progress info
-        // if(omp_get_num_threads() == 1)
-            std::clog << "\rProgress: " << std::fixed << std::setprecision(2) << 100 * (progress / float(image.get_height() * image.get_width())) << ' ' << std::flush;
-        // RayTracingRenderer::render_progress = pixel_row / float(image.get_height() - 1);
+        // Calculate progress percentage
+        auto progress_percentage = (static_cast<float>(progress) / static_cast<float>(total_pixels)); 
+
+        // Update progress info for showing
+        if (render_progress)
+            render_progress->store(progress_percentage);
+        else if (!scene.parallelize)
+            std::clog << "\rProgress: " << std::fixed << std::setprecision(2) << 100.0f * progress_percentage << '% ' << std::flush;
     }
 
     // End render chrono
@@ -147,6 +158,7 @@ void Raytracing::Camera::render(Scene& scene, ImageWriter& image)
     std::cout << std::endl;
 
     // Benchmark rays
+    primary_rays = total_pixels * pixel_sample_sqrt * pixel_sample_sqrt;
     rays_casted = primary_rays + background_rays + light_rays + reflected_rays + refracted_rays + unknwon_rays;
     average_rays_per_second = rays_casted / int(render_chrono.elapsed_miliseconds());
 }
@@ -169,8 +181,12 @@ const Ray Raytracing::Camera::get_ray_sample(int pixel_row, int pixel_column, in
     return ray;
 }
 
-color Raytracing::Camera::ray_color(const Ray& sample_ray, int depth, const Scene& scene)
+color Raytracing::Camera::ray_color(const Ray& sample_ray, int depth, const Scene& scene, std::stop_token s_token)
 {
+    // Halt execution check
+    if (s_token.stop_requested())
+        return color(0,0,0);
+
     // If we've exceeded the ray bounce limit, no more light is gathered.
     if (depth <= 0)
         return color(0, 0, 0);
@@ -184,7 +200,9 @@ color Raytracing::Camera::ray_color(const Ray& sample_ray, int depth, const Scen
     // Background hit  
     if (!scene.hit(sample_ray, ray_t, hrec))
     {
-        background_rays++;
+        #pragma omp atomic update
+            background_rays++;
+
         return compute_background_color(scene, sample_ray);
     }
 
@@ -212,7 +230,9 @@ color Raytracing::Camera::ray_color(const Ray& sample_ray, int depth, const Scen
         // If the ray does not scatter, it has hit an emissive material
         if (!hrec.material->scatter(sample_ray, hrec, srec))
         {
-            light_rays++;
+            #pragma omp atomic update
+                light_rays++;
+
             return color_from_emission;
         }
 
@@ -221,11 +241,17 @@ color Raytracing::Camera::ray_color(const Ray& sample_ray, int depth, const Scen
         {
             switch (srec.scatter_type)
             {
-                case REFLECT: reflected_rays++; break; // Metal or Dielectric
-                case REFRACT: refracted_rays++; break; // Dielectric
+                case REFLECT: // Metal or Dielectric
+                    #pragma omp atomic update
+                        reflected_rays++;
+                    break; 
+                case REFRACT: // Dielectric
+                    #pragma omp atomic update
+                        refracted_rays++;
+                    break; 
             }
 
-            return srec.attenuation * ray_color(srec.specular_ray.value(), depth - 1, scene);
+            return srec.attenuation * ray_color(srec.specular_ray.value(), depth - 1, scene, s_token);
         }
 
         // Aux variables (to make code more understandable)
@@ -261,7 +287,8 @@ color Raytracing::Camera::ray_color(const Ray& sample_ray, int depth, const Scen
         auto scattering_pdf_value = hrec.material->scattering_pdf_value(sample_ray, hrec, scattered);
 
         // Update reflecting rays count
-        reflected_rays++;
+        #pragma omp atomic update
+            reflected_rays++;
 
         // === Russian Roulette ===
         double rr_probability = 1;
@@ -276,7 +303,7 @@ color Raytracing::Camera::ray_color(const Ray& sample_ray, int depth, const Scen
         }
 
         // Recursive call
-        color sample_color = ray_color(scattered, depth - 1, scene);
+        color sample_color = ray_color(scattered, depth - 1, scene, s_token);
 
         // Bidirectional Reflectance Distribution Function (BRDF)
         if (scene.russian_roulette)
@@ -288,7 +315,10 @@ color Raytracing::Camera::ray_color(const Ray& sample_ray, int depth, const Scen
         return color_from_emission + color_from_scatter;
     }
     default: // Unknown hit
-        unknwon_rays++;
+
+        #pragma omp atomic update
+            unknwon_rays++;
+
         return compute_background_color(scene, sample_ray);
     }
 }

@@ -30,7 +30,7 @@ namespace Raytracing
         // Optimizations
         bool bvh_optimization = true;
         bool russian_roulette = false;
-        bool parallel_computing = true;
+        bool parallelize = true;
 
         // Background
         BACKGROUND_TYPE background_type = BACKGROUND_TYPE::SKYBOX;
@@ -50,7 +50,6 @@ namespace Raytracing
         IMAGE_FORMAT format = PNG_8;
         int quality = 100;
         string image_path = output_path;
-
     };
 }
 
@@ -78,8 +77,8 @@ public:
 
     RayTracingRenderer(const sRendererConfiguration& config = {});
 
-    static float render_progress;
-    static string last_render_image;
+    std::atomic<bool> is_rendering = false;
+    std::atomic<float> render_progress = 0.0f;
 
     int pre_initialize(GLFWwindow* window, bool use_mirror_screen = false) override;
     int initialize() override;
@@ -90,5 +89,7 @@ public:
     void render() override;
 
     virtual void resize_window(int width, int height) override;
-    void render_frame(const ParsedScene& scene, const Raytracing::RendererSettings& settings);
+
+    void render_frame_async(std::stop_token s_token, shared_ptr<const ParsedScene> parsed_scene, const Raytracing::RendererSettings settings);
+    void render_frame(shared_ptr<const ParsedScene> scene, const Raytracing::RendererSettings settings);
 };

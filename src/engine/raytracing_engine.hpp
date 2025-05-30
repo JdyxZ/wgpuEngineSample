@@ -2,6 +2,7 @@
 
 // Raytracing Headers
 #include "graphics/raytracing_renderer.hpp"
+#include "utils/project_parsers.hpp"
 
 // Framework Headers
 #include "engine/engine.h"
@@ -14,9 +15,11 @@ class RayTracingEngine : public Engine
 private:
 
     bool show_imgui = true;
-    bool is_raytracer_rendering = false;
+
     Raytracing::RendererSettings settings;
     RayTracingRenderer* renderer = nullptr;
+
+    std::jthread render_jthread;
 
 public:
 
@@ -27,6 +30,7 @@ public:
 	void render() override;
     void create_scene();
     void render_gui();
+    void render_frame(const ParsedScene& scene, const Raytracing::RendererSettings& settings, std::stop_token s_token) const;
 
     static RayTracingEngine* get_sample_instance() { return static_cast<RayTracingEngine*>(instance); }
 

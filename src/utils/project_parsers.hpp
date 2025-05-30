@@ -25,12 +25,15 @@ namespace Raytracing
 struct ParsedScene
 {
     vector<shared_ptr<Raytracing::Mesh>> meshes;
+
+    ParsedScene() = default;
+    ParsedScene(const vector<shared_ptr<Raytracing::Mesh>>& m) : meshes(m) {}
 };
 
 using ParsedNode = ParsedScene;
 
 // Object parsers
-ParsedScene parse_nodes(const vector<Node*>& nodes, const bool use_bvh);
+shared_ptr<ParsedScene> parse_nodes(const vector<Node*>& nodes, const bool use_bvh);
 ParsedScene parse_node(Node* node, const bool use_bvh);
 shared_ptr<Raytracing::Surface> parse_surface(Surface* surface, const Raytracing::Matrix44& model, const bool use_bvh);
 Raytracing::SkyboxTexture* parse_skybox(Environment3D* skybox);

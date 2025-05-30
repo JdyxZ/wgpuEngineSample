@@ -41,32 +41,40 @@ Logger::Logger() {}
 
 string Logger::error(string location, string description)
 {
+    std::lock_guard<std::mutex> guard(logger_mutex);
     LogMessage message = new_message(_ERROR, location, description);
     message.print();
     return message.str();
+    // Mutex automatically unlocked when 'guard' goes out of scope
 }
 
 string Logger::warn(string location, string description)
 {
+    std::lock_guard<std::mutex> guard(logger_mutex);
     LogMessage message = new_message(_WARNING, location, description);
     message.print();
     return message.str();
+    // Mutex automatically unlocked when 'guard' goes out of scope
 }
 
 string Logger::info(string location, string description)
 {
+    std::lock_guard<std::mutex> guard(logger_mutex);
     LogMessage message = new_message(_INFO, location, description);
     message.print();
     return message.str();
+    // Mutex automatically unlocked when 'guard' goes out of scope
 }
 
 vector<LogMessage> Logger::messages()
 {
-    return _messages;
+    std::lock_guard<std::mutex> guard(logger_mutex);
+    return _messages; 
 }
 
 void Logger::clear()
 {
+    std::lock_guard<std::mutex> guard(logger_mutex);
     _messages.clear();
 }
 

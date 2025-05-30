@@ -152,45 +152,74 @@ void RayTracingRenderer::render_manual_scene()
     log.write(scene, camera, image);
 }
 
-void RayTracingRenderer::render_frame(const ParsedScene& parsed_scene, const RendererSettings& settings)
+void RayTracingRenderer::render_frame_async(std::stop_token s_token, shared_ptr<const ParsedScene> parsed_scene, const RendererSettings settings)
 {
-    // Unwrap parsed scene 
-    auto meshes = parsed_scene.meshes;
+    try
+    {
+        // Check
+        if (!parsed_scene)
+        {
+            string error = Logger::error("RayTracingRenderer", "Parsed scene is null. Cannot render frame.");
+            is_rendering = false;
+            return;
+        }
 
-    // Create scene
-    Scene scene;
+        // Unwrap parsed scene 
+        auto meshes = parsed_scene->meshes;
 
-    // Create camera
-    Raytracing::Camera camera;
+        // Create scene
+        Scene scene;
 
-    // Create image
-    ImageWriter image = ImageWriter(settings.screen_width, settings.screen_height);
+        // Create camera
+        Raytracing::Camera camera;
 
-    // Init
-    image.initialize(settings);
-    scene.initialize(settings);
-    camera.initialize(settings, scene, image);
+        // Create image
+        ImageWriter image = ImageWriter(settings.screen_width, settings.screen_height);
 
-    // Scene start
-    scene.start();
+        // Init
+        image.initialize(settings);
+        scene.initialize(settings);
+        camera.initialize(settings, &render_progress, scene, image);
 
-    // Build scene
-    scene.build(meshes);
+        // Scene start
+        scene.start();
 
-    // Render scene
-    camera.render(scene, image);
+        // Build scene
+        scene.build(meshes);
 
-    // Encode and save image with desired format
-    image.save();
+        // Render scene
+        camera.render(scene, image, s_token);
 
-    // Scene end
-    scene.end();
+        // Check for halted execution
+        if (s_token.stop_requested())
+        {
+            Logger::info("RayTracingRenderer", "Rendering process halted by user request.");
+            is_rendering = false;
+            return;
+        }
 
-    // Write scene log
-    LogWriter log;
-    log.write(scene, camera, image);
+        // Encode and save image with desired format
+        image.save();
+
+        // Scene end
+        scene.end();
+
+        // Write scene log
+        LogWriter log;
+        log.write(scene, camera, image);
+    }
+    catch (...) 
+    {
+        Logger::error("RayTracingRenderer", "Exception occurred during render_frame.");
+        is_rendering = false;
+        throw;
+    }    
+
+    is_rendering = false;
 }
 
-// Static attributes
-float RayTracingRenderer::render_progress = 0.f;
-string RayTracingRenderer::last_render_image = "";
+void RayTracingRenderer::render_frame(shared_ptr<const ParsedScene> scene, const RendererSettings settings)
+{
+    render_frame_async(std::stop_token{}, scene, settings);
+}
+

@@ -66,27 +66,28 @@ namespace Raytracing
 
         Camera();
 
-        void initialize(const Raytracing::RendererSettings& settings, const Scene& scene, ImageWriter& image);
+        void initialize(const Raytracing::RendererSettings& settings, std::atomic<float>* render_progres, const Scene& scene, ImageWriter& image);
         void initialize(const Raytracing::Scene& scene, ImageWriter& image); 
-        void render(Raytracing::Scene& scene, ImageWriter& image);
+        void render(const Raytracing::Scene& scene, ImageWriter& image, std::stop_token s_token = std::stop_token{});
 
     private:
 
         // Internal variables
-        point3 pixel00_loc;             // Location of pixel 0, 0
-        vec3   pixel_delta_u;           // Offset to pixel to the right
-        vec3   pixel_delta_v;           // Offset to pixel below
-        vec3   side, up, view;          // Camera frame basis vectors
-        vec3   defocus_disk_u;          // Defocus disk horizontal radius
-        vec3   defocus_disk_v;          // Defocus disk vertical radius    
-        int    pixel_sample_sqrt;	    // Square root of samples per pixel
-        double pixel_sample_sqrt_inv;   // Inverse of square root of samples per pixel
+        point3 pixel00_loc;                                 // Location of pixel 0, 0
+        vec3   pixel_delta_u;                               // Offset to pixel to the right
+        vec3   pixel_delta_v;                               // Offset to pixel below
+        vec3   side, up, view;                              // Camera frame basis vectors
+        vec3   defocus_disk_u;                              // Defocus disk horizontal radius
+        vec3   defocus_disk_v;                              // Defocus disk vertical radius    
+        int    pixel_sample_sqrt;	                        // Square root of samples per pixel
+        double pixel_sample_sqrt_inv;                       // Inverse of square root of samples per pixel
+        std::atomic<float>* render_progress = nullptr;    // Atomic pointer to render progress for ImGui progress bar
 
         // Auxiliar variables
         vector<unsigned long long> elapsed_nanoseconds;
 
         const Ray get_ray_sample(int pixel_row, int pixel_column, int sample_row, int sample_column) const; // Construct a camera ray originating from the defocus disk and directed at randomly sampled point around the pixel location pixel_row, pixel_column for stratified sample square sample_row, sample_column.
-        Raytracing::color ray_color(const Ray& sample_ray, int depth, const Raytracing::Scene& scene);
+        Raytracing::color ray_color(const Ray& sample_ray, int depth, const Raytracing::Scene& scene, std::stop_token s_token);
         Raytracing::color compute_background_color(const Raytracing::Scene& scene, const Ray& sample_ray) const;
         optional<Raytracing::color> barycentric_color_interpolation(const hit_record& rec, Triangle* t) const;
 
