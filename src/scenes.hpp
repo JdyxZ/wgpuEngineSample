@@ -1,9 +1,11 @@
+#pragma once
+
 // Namespace forward declarations
 namespace Raytracing
 {
     class Scene;
-    class Camera;
-    class ImageWriter;
+    struct Camera;
+    struct ImageWriter;
 }
 
 namespace Raytracing

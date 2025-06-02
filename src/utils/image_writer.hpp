@@ -36,7 +36,7 @@ enum IMAGE_PIXEL_TYPE
 
 namespace Raytracing
 {
-    class ImageWriter
+    struct ImageWriter
     {
     public:
         string name;                                // Image name

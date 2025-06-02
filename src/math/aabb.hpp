@@ -5,7 +5,7 @@
 #include "interval.hpp"
 
 // Forward declarations
-class Ray;
+struct Ray;
 
 // Namespace forward declarations
 namespace Raytracing

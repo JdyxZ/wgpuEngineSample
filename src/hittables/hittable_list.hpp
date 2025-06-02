@@ -7,9 +7,9 @@
 
 // Forward declarations
 class Hittable;
-class Ray;
-class Interval;
-class hit_record;
+struct Ray;
+struct Interval;
+struct hit_record;
 
 class hittable_list : public Hittable
 {

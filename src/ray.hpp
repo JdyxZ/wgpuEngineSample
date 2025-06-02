@@ -3,7 +3,7 @@
 // Headers
 #include "math/vec3.hpp"
 
-class Ray 
+struct Ray 
 {
 public:
     Ray();

@@ -13,7 +13,7 @@ class Perlin;
 // Namespace forward declarations
 namespace Raytracing
 {
-    class ImageReader;
+    struct ImageReader;
 }
 
 namespace Raytracing

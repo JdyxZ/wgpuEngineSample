@@ -7,14 +7,14 @@
 #include "hittables/hittable.hpp"
 
 // Forward declarations
-class Ray;
+struct Ray;
 class Triangle;
 
 // Namespace forward declarations
 namespace Raytracing
 {
     class Scene;
-    class ImageWriter;
+    struct ImageWriter;
     struct RendererSettings;
 }
 
@@ -36,7 +36,7 @@ namespace Raytracing
 
 namespace Raytracing
 {
-    class Camera
+    struct Camera
     {
     public:
         // Camera settings

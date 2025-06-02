@@ -3,7 +3,7 @@
 // Headers
 #include "vec3.hpp"
 
-class ONB  // Orthonormal Basis (ONB)
+struct ONB  // Orthonormal Basis (ONB)
 { 
 public:
     ONB();

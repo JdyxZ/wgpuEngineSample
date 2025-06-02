@@ -10,8 +10,8 @@
 // Namespace forward declarations
 namespace Raytracing
 {
-    class Camera;
-    class ImageWriter;
+    struct Camera;
+    struct ImageWriter;
     struct RendererSettings;
     class Mesh;
     class SkyboxTexture;

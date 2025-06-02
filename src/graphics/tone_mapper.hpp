@@ -6,7 +6,7 @@
 
 // Source: https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/
 
-class ToneMapper
+struct ToneMapper
 {
 public:
     static const Raytracing::Matrix33 ACESInputMat; // sRGB => XYZ => D65_2_D60 => AP1 => RRT_SAT

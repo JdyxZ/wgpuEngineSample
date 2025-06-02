@@ -8,8 +8,8 @@
 #include "math/transform.hpp"
 
 // Forward declarations
-class Ray;
-class Interval;
+struct Ray;
+struct Interval;
 
 // Namespace forward declarations
 namespace Raytracing
@@ -36,7 +36,7 @@ struct barycentric_coordinates
 	double u, v, w;
 };
 
-class hit_record 
+struct hit_record
 {
 public:
     // General attributes

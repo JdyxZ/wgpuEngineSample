@@ -7,8 +7,8 @@
 namespace Raytracing
 {
     class Scene;
-    class Camera;
-    class ImageWriter;
+    struct Camera;
+    struct ImageWriter;
 }
 
 struct LogWriter

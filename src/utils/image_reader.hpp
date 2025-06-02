@@ -20,7 +20,7 @@ namespace Raytracing
         LOADED // Image was loaded from a file
     };
 
-    class ImageReader
+    struct ImageReader
     {
     public:
 

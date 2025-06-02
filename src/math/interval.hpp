@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-class Interval 
+struct Interval 
 {
 public:
     double min, max;
