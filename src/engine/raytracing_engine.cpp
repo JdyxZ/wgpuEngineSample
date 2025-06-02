@@ -224,11 +224,22 @@ void RayTracingEngine::render_gui()
                 // Start rendering thread
                 render_jthread = std::jthread
                 (
+                    [this, renderer = this->renderer, parsed_scene](std::stop_token stoken)
+                    {
+                        renderer->render_frame_async(stoken, parsed_scene, settings);
+                    }
+                );
+
+                /*
+                render_jthread = std::jthread
+                (
                     &RayTracingRenderer::render_frame_async,    // Render function pointer
-                    renderer,                                   // Pointer to the RayTracingRenderer instance
+                    &renderer,                                  // Pointer to the RayTracingRenderer instance
                     parsed_scene,                               // Scene data
                     settings                                    // Render settings
                 );
+                */
+
 
                 // No need to detach/join manually (unless starting a new one)    
             }
@@ -239,10 +250,10 @@ void RayTracingEngine::render_gui()
                 ImGui::PopStyleVar();    // Restore alpha
             }
 
-            ImGui::SameLine();
-
             if (is_rendering)
             {
+                ImGui::SameLine();
+
                 // Cancel button
                 if (ImGui::Button("Cancel"))
                 {
@@ -250,8 +261,9 @@ void RayTracingEngine::render_gui()
                     {
                         render_jthread.request_stop(); // Use jthread's cancellation
                     }
-
                 }
+
+                ImGui::NewLine();
 
                 // Get progress status
                 float progress = std::clamp(renderer->render_progress.load(), 0.0f, 1.0f);
